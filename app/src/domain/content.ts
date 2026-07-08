@@ -11,6 +11,16 @@ function normalizeContent(source: ContentPackage): ContentPackage {
   }
 
   const referencedIds = new Set<string>(source.placeholder_skill_ids_for_mvp ?? [])
+  for (const skill of source.skills ?? []) {
+    for (const relatedId of [
+      ...(skill.related_skills?.supports ?? []),
+      ...(skill.related_skills?.transfer_to ?? []),
+      ...(skill.related_skills?.contrasts_with ?? []),
+      ...(skill.related_skills?.not_a_prerequisite ?? []),
+    ]) {
+      referencedIds.add(relatedId)
+    }
+  }
   for (const profile of source.simulation_profiles ?? []) {
     for (const id of [
       ...(profile.mastered ?? []),
@@ -277,6 +287,14 @@ const placeholderSpecs: Record<string, PlaceholderSpec> = {
     [hard('vocab.familiar_nouns.v1', 'independent_in_activity')],
     ['find real spoon', 'find shoe in room'],
   ),
+  'speech.later_sounds.s_r_th.v1': {
+    ...basicSpec('Later speech sounds', 'speech_production', [], ['/s/', '/r/', '/th/']),
+    age_band: '3-7',
+    description: 'Later-developing speech sounds that should be tracked separately from language comprehension.',
+    rationale: 'Speech-sound production is not the same as language comprehension or phonological awareness.',
+    doNotDrill: ['Do not pressure production of /s/, /r/, /th/, or clusters in the toddler MVP.'],
+    contraindications: ['Must not gate vocabulary, sound play, phonological awareness, or phonics readiness.'],
+  },
 }
 
 function basicSpec(title: string, domain: string, prereqs: Prerequisite[], examples: string[]): PlaceholderSpec {

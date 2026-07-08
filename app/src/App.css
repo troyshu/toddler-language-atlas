@@ -461,6 +461,256 @@ input {
   margin: 22px 28px 34px;
 }
 
+.graph-shell {
+  padding: 22px 28px 34px;
+}
+
+.graph-toolbar {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d8d3c8;
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr minmax(240px, 360px) auto;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.graph-toolbar h2 {
+  font-size: 24px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.graph-toolbar label {
+  color: #66716f;
+  display: grid;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 5px;
+}
+
+.validation-badge {
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.validation-badge.valid {
+  background: #e7f4da;
+  color: #466b16;
+}
+
+.validation-badge.invalid {
+  background: #fae2dd;
+  color: #8f3828;
+}
+
+.graph-layout {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+}
+
+.graph-canvas {
+  background:
+    linear-gradient(90deg, rgba(216, 211, 200, 0.35) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(216, 211, 200, 0.35) 1px, transparent 1px),
+    #fff;
+  background-size: 48px 48px;
+  border: 1px solid #d8d3c8;
+  border-radius: 8px;
+  min-height: 620px;
+  overflow: auto;
+  position: relative;
+}
+
+.edge-layer {
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
+.graph-edge {
+  fill: none;
+  stroke: #b8b0a3;
+  stroke-width: 2;
+}
+
+.graph-edge.soft {
+  stroke-dasharray: 7 7;
+}
+
+.graph-edge.active {
+  stroke: #d86145;
+  stroke-width: 3;
+}
+
+.domain-label {
+  color: #7a7167;
+  font-size: 12px;
+  font-weight: 900;
+  left: 18px;
+  letter-spacing: 0;
+  position: absolute;
+  text-transform: uppercase;
+  width: 115px;
+}
+
+.graph-node {
+  align-items: start;
+  background: #fff;
+  border: 2px solid #cfc8ba;
+  border-left-width: 8px;
+  border-radius: 8px;
+  color: #18201f;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+  padding: 8px 10px;
+  position: absolute;
+  text-align: left;
+}
+
+.graph-node:hover,
+.graph-node.selected-node {
+  background: #fff8eb;
+  border-color: #d86145;
+}
+
+.graph-node.frontier-node {
+  box-shadow: 0 0 0 4px rgba(24, 92, 95, 0.14);
+}
+
+.graph-node.path-node {
+  border-top-color: #d86145;
+  border-right-color: #d86145;
+  border-bottom-color: #d86145;
+}
+
+.graph-node span {
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+.graph-node small {
+  color: #66716f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.domain-engagement {
+  border-left-color: #185c5f;
+}
+
+.domain-vocabulary,
+.domain-semantics {
+  border-left-color: #4f6f9f;
+}
+
+.domain-concepts,
+.domain-receptive_language {
+  border-left-color: #d86145;
+}
+
+.domain-questions,
+.domain-narrative,
+.domain-expressive_language {
+  border-left-color: #94622c;
+}
+
+.domain-sound_play,
+.domain-phonological_awareness {
+  border-left-color: #6f5aa8;
+}
+
+.domain-early_literacy,
+.domain-phonics {
+  border-left-color: #466b16;
+}
+
+.domain-speech_production,
+.domain-generalization {
+  border-left-color: #66716f;
+}
+
+.state-mastered,
+.state-generalizing {
+  background: #f4faee;
+}
+
+.state-deferred,
+.state-blocked {
+  opacity: 0.62;
+}
+
+.skill-inspector {
+  background: #fff;
+  border: 1px solid #d8d3c8;
+  border-radius: 8px;
+  padding: 16px;
+  position: sticky;
+  top: 16px;
+}
+
+.skill-inspector h3 {
+  font-size: 22px;
+  line-height: 1.15;
+  margin: 10px 0 8px;
+}
+
+.inspector-description {
+  color: #35413f;
+  margin-bottom: 14px;
+}
+
+.inspector-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 14px;
+}
+
+.inspector-section {
+  border-top: 1px solid #eee9df;
+  padding: 13px 0 0;
+}
+
+.inspector-section + .inspector-section {
+  margin-top: 13px;
+}
+
+.inspector-section h4 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+.inspector-section p,
+.inspector-section li {
+  color: #4b5654;
+  font-size: 14px;
+}
+
+.inspector-section ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.inspector-section li {
+  margin: 0 0 8px;
+}
+
+.inspector-section span {
+  color: #66716f;
+}
+
 .simulation-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -500,6 +750,8 @@ input {
   .dashboard-grid,
   .simulation-grid,
   .choice-grid,
+  .graph-layout,
+  .graph-toolbar,
   .score-controls,
   .score-buttons,
   .manual-log {
