@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "validate": "npm run test && npm run build"
+    "validate": "npm run test && npm run build",
+    "apply-asset-review": "node scripts/apply-asset-review.mjs"
   },
   "dependencies": {
     "js-yaml": "^5.2.1",

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
+import { AssetReviewPanel } from './AssetReview'
 import { defaultAssets } from './domain/assets'
 import { content } from './domain/content'
 import {
@@ -17,7 +18,7 @@ import { runSimulationSuite } from './domain/simulations'
 import { useLocalStorageState } from './domain/storage'
 import type { AssetItem, LearnerState, ObservationResult, PromptLevel, Recommendation, SkillNode } from './domain/types'
 
-type ViewMode = 'dashboard' | 'graph' | 'photo-point' | 'put-it-somewhere' | 'simulations'
+type ViewMode = 'dashboard' | 'graph' | 'photo-point' | 'put-it-somewhere' | 'asset-review' | 'simulations'
 type ScoreChoice = 'got_it' | 'with_help' | 'almost' | 'not_yet'
 
 const activityHelpOptions: Array<{ label: string; value: PromptLevel }> = [
@@ -116,6 +117,13 @@ function App() {
             Put It
           </button>
           <button
+            className={view === 'asset-review' ? 'active' : ''}
+            type="button"
+            onClick={() => setView('asset-review')}
+          >
+            Review
+          </button>
+          <button
             className={view === 'simulations' ? 'active' : ''}
             type="button"
             onClick={() => setView('simulations')}
@@ -149,6 +157,8 @@ function App() {
       {view === 'put-it-somewhere' && (
         <PutItSomewhereActivity assets={assets} onBack={() => setView('dashboard')} onLogObservation={logObservation} />
       )}
+
+      {view === 'asset-review' && <AssetReviewPanel assets={defaultAssets} />}
 
       {view === 'simulations' && <SimulationPanel results={simulations} />}
     </main>
