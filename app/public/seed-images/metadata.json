@@ -1,0 +1,1114 @@
+[
+  {
+    "id": "asset.spoon",
+    "label": "spoon",
+    "fileName": "spoon.jpg",
+    "tags": [
+      "object",
+      "food",
+      "kitchen",
+      "utensil"
+    ],
+    "categories": [
+      "familiar_object",
+      "kitchen"
+    ],
+    "phonemeTargets": [
+      "initial-s"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Spoons 018.JPG",
+      "creator": "Mflan1977",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Spoons_018.JPG",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.cup",
+    "label": "cup",
+    "fileName": "cup.jpg",
+    "tags": [
+      "object",
+      "kitchen",
+      "drink"
+    ],
+    "categories": [
+      "familiar_object",
+      "kitchen"
+    ],
+    "phonemeTargets": [
+      "initial-k"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "spatial_prompt",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Metal cup on white (Unsplash).jpg",
+      "creator": "Andrew Neel andrewtneel",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Metal_cup_on_white_(Unsplash).jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.shoe",
+    "label": "shoe",
+    "fileName": "shoe.png",
+    "tags": [
+      "object",
+      "clothing"
+    ],
+    "categories": [
+      "familiar_object",
+      "clothing"
+    ],
+    "phonemeTargets": [
+      "initial-sh"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Worn Shoe.png",
+      "creator": "Aupajo",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Worn_Shoe.png",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.hat",
+    "label": "hat",
+    "fileName": "hat.jpg",
+    "tags": [
+      "object",
+      "clothing"
+    ],
+    "categories": [
+      "familiar_object",
+      "clothing"
+    ],
+    "phonemeTargets": [
+      "initial-h"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Farmer's Hat in a Cornfield (Unsplash).jpg",
+      "creator": "Alex Blăjan alexb",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Farmer%27s_Hat_in_a_Cornfield_(Unsplash).jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.ball",
+    "label": "ball",
+    "fileName": "ball.jpg",
+    "tags": [
+      "object",
+      "toy",
+      "sports"
+    ],
+    "categories": [
+      "familiar_object",
+      "toy"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "spatial_prompt",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Soccer ball on ground.jpg",
+      "creator": "Petey21",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Soccer_ball_on_ground.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.book",
+    "label": "book",
+    "fileName": "book.jpg",
+    "tags": [
+      "object",
+      "book",
+      "reading"
+    ],
+    "categories": [
+      "familiar_object",
+      "literacy"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Bokuppslag - Livrustkammaren - 51450.tif",
+      "creator": "Unknown authorUnknown author",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bokuppslag_-_Livrustkammaren_-_51450.tif",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.chair",
+    "label": "chair",
+    "fileName": "chair.jpg",
+    "tags": [
+      "object",
+      "furniture"
+    ],
+    "categories": [
+      "familiar_object",
+      "furniture"
+    ],
+    "phonemeTargets": [
+      "initial-ch"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "spatial_prompt",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Desk chair MET 211351.jpg",
+      "creator": "This file was donated to Wikimedia Commons as part of a project by the Metropolitan Museum of Art. See the Image and Data Resources Open Access Policy",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Desk_chair_MET_211351.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.table",
+    "label": "table",
+    "fileName": "table.jpg",
+    "tags": [
+      "object",
+      "furniture"
+    ],
+    "categories": [
+      "familiar_object",
+      "furniture"
+    ],
+    "phonemeTargets": [
+      "initial-t"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "spatial_prompt",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Bockbord av furu från cirka 1650 - Skoklosters slott - 95178.tif",
+      "creator": "Unknown authorUnknown author",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bockbord_av_furu_fr%C3%A5n_cirka_1650_-_Skoklosters_slott_-_95178.tif",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.box",
+    "label": "box",
+    "fileName": "box.jpg",
+    "tags": [
+      "object",
+      "container",
+      "furniture"
+    ],
+    "categories": [
+      "familiar_object",
+      "spatial_target"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "spatial_prompt",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Droste Pastilles cardboard box pic1.JPG",
+      "creator": "Alf van Beem",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Droste_Pastilles_cardboard_box_pic1.JPG",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.bed",
+    "label": "bed",
+    "fileName": "bed.jpg",
+    "tags": [
+      "object",
+      "furniture",
+      "sleep"
+    ],
+    "categories": [
+      "familiar_object",
+      "furniture"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "spatial_prompt",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Himmelsäng av vitmålad furu - Skoklosters slott - 108233.tif",
+      "creator": "Unknown authorUnknown author",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Himmels%C3%A4ng_av_vitm%C3%A5lad_furu_-_Skoklosters_slott_-_108233.tif",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.apple",
+    "label": "apple",
+    "fileName": "apple.jpg",
+    "tags": [
+      "food",
+      "fruit"
+    ],
+    "categories": [
+      "food"
+    ],
+    "phonemeTargets": [
+      "initial-a"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Honeycrisp-Apple.jpg",
+      "creator": "Evan-Amos",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Honeycrisp-Apple.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.banana",
+    "label": "banana",
+    "fileName": "banana.jpg",
+    "tags": [
+      "food",
+      "fruit"
+    ],
+    "categories": [
+      "food"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Bunch of bananas.JPG",
+      "creator": "Pdpics.com",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bunch_of_bananas.JPG",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.bread",
+    "label": "bread",
+    "fileName": "bread.jpg",
+    "tags": [
+      "food"
+    ],
+    "categories": [
+      "food"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Bread, fresh from the oven - Massachusetts.jpg",
+      "creator": "Daderot",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bread,_fresh_from_the_oven_-_Massachusetts.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.cracker",
+    "label": "cracker",
+    "fileName": "cracker.jpg",
+    "tags": [
+      "food",
+      "snack"
+    ],
+    "categories": [
+      "food"
+    ],
+    "phonemeTargets": [
+      "initial-k"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Graham-Cracker-Stack.jpg",
+      "creator": "Evan-Amos",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Graham-Cracker-Stack.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.cookie",
+    "label": "cookie",
+    "fileName": "cookie.jpg",
+    "tags": [
+      "food",
+      "snack"
+    ],
+    "categories": [
+      "food"
+    ],
+    "phonemeTargets": [
+      "initial-k"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Oreo-Two-Cookies.jpg",
+      "creator": "Evan-Amos",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Oreo-Two-Cookies.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.carrot",
+    "label": "carrot",
+    "fileName": "carrot.jpg",
+    "tags": [
+      "food",
+      "vegetable"
+    ],
+    "categories": [
+      "food"
+    ],
+    "phonemeTargets": [
+      "initial-k"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Vegetable-Carrot-Bundle-wStalks.jpg",
+      "creator": "Evan-Amos",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vegetable-Carrot-Bundle-wStalks.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.bowl",
+    "label": "bowl",
+    "fileName": "bowl.jpg",
+    "tags": [
+      "object",
+      "kitchen",
+      "food"
+    ],
+    "categories": [
+      "familiar_object",
+      "kitchen"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Hot-and-Sour-Soup-Bowl.jpg",
+      "creator": "Evan-Amos",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hot-and-Sour-Soup-Bowl.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.milk",
+    "label": "milk",
+    "fileName": "milk.jpg",
+    "tags": [
+      "food",
+      "drink"
+    ],
+    "categories": [
+      "food"
+    ],
+    "phonemeTargets": [
+      "initial-m"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Oreos-&-Milk.jpg",
+      "creator": "Evan-Amos",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Oreos-%26-Milk.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.dog",
+    "label": "dog",
+    "fileName": "dog.jpg",
+    "tags": [
+      "animal",
+      "sound"
+    ],
+    "categories": [
+      "animal"
+    ],
+    "phonemeTargets": [
+      "initial-d"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Dog on a beach (Unsplash).jpg",
+      "creator": "Meg Sanchez megsanchez",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dog_on_a_beach_(Unsplash).jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.cat",
+    "label": "cat",
+    "fileName": "cat.jpg",
+    "tags": [
+      "animal",
+      "sound"
+    ],
+    "categories": [
+      "animal"
+    ],
+    "phonemeTargets": [
+      "initial-k"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Cat in the garden.jpg",
+      "creator": "Usamasaad",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cat_in_the_garden.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.bear",
+    "label": "bear",
+    "fileName": "bear.jpg",
+    "tags": [
+      "toy",
+      "animal"
+    ],
+    "categories": [
+      "toy",
+      "animal"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "spatial_prompt",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:EmiMa-005.jpg",
+      "creator": "Emanuel Jöbstl und Martin Thoma",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:EmiMa-005.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.car",
+    "label": "car",
+    "fileName": "car.jpg",
+    "tags": [
+      "vehicle",
+      "toy"
+    ],
+    "categories": [
+      "vehicle",
+      "toy"
+    ],
+    "phonemeTargets": [
+      "initial-k"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "spatial_prompt",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Red car toy.jpg",
+      "creator": "Jebulon",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Red_car_toy.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.truck",
+    "label": "truck",
+    "fileName": "truck.jpg",
+    "tags": [
+      "vehicle",
+      "toy"
+    ],
+    "categories": [
+      "vehicle",
+      "toy"
+    ],
+    "phonemeTargets": [
+      "initial-t"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "spatial_prompt",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Tin toy DAF truck pic1.JPG",
+      "creator": "Alf van Beem",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tin_toy_DAF_truck_pic1.JPG",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.doll",
+    "label": "doll",
+    "fileName": "doll.jpg",
+    "tags": [
+      "toy"
+    ],
+    "categories": [
+      "toy"
+    ],
+    "phonemeTargets": [
+      "initial-d"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Speelgoedmuseum Deventer, poppen, pic2.JPG",
+      "creator": "Alf van Beem",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Speelgoedmuseum_Deventer,_poppen,_pic2.JPG",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.blocks",
+    "label": "blocks",
+    "fileName": "blocks.jpg",
+    "tags": [
+      "toy",
+      "blocks"
+    ],
+    "categories": [
+      "toy"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Jongetje met blokken, Bestanddeelnr 901-4030.jpg",
+      "creator": "Nationaal Archief",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Jongetje_met_blokken,_Bestanddeelnr_901-4030.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.duck",
+    "label": "duck",
+    "fileName": "duck.jpg",
+    "tags": [
+      "animal",
+      "sound"
+    ],
+    "categories": [
+      "animal"
+    ],
+    "phonemeTargets": [
+      "initial-d"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Loch Ness 2000-1-ducks.jpg",
+      "creator": "Libasstref",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Loch_Ness_2000-1-ducks.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.bus",
+    "label": "bus",
+    "fileName": "bus.jpg",
+    "tags": [
+      "vehicle"
+    ],
+    "categories": [
+      "vehicle"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Megabus Lokalo A sa linije 511 u Beogradu 03.jpg",
+      "creator": "Lazar144000",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Megabus_Lokalo_A_sa_linije_511_u_Beogradu_03.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.airplane",
+    "label": "airplane",
+    "fileName": "airplane.jpg",
+    "tags": [
+      "vehicle"
+    ],
+    "categories": [
+      "vehicle"
+    ],
+    "phonemeTargets": [
+      "initial-a"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:The SoraSeed air bland painting of the Boeing 737 -400 type airplane of Skynet Asia Airways. JA737B. I photograph it in the 51st Haneda Airport Airport gate neighborhood in November, 2011.JPG",
+      "creator": "Ootahara",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_SoraSeed_air_bland_painting_of_the_Boeing_737_-400_type_airplane_of_Skynet_Asia_Airways._JA737B._I_photograph_it_in_the_51st_Haneda_Airport_Airport_gate_neighborhood_in_November,_2011.JPG",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.hand",
+    "label": "hand",
+    "fileName": "hand.jpg",
+    "tags": [
+      "body",
+      "people"
+    ],
+    "categories": [
+      "body"
+    ],
+    "phonemeTargets": [
+      "initial-h"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Hand in hand with dad (Unsplash).jpg",
+      "creator": "Liane Metzler liane",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hand_in_hand_with_dad_(Unsplash).jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.sock",
+    "label": "sock",
+    "fileName": "sock.jpg",
+    "tags": [
+      "clothing"
+    ],
+    "categories": [
+      "clothing"
+    ],
+    "phonemeTargets": [
+      "initial-s"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Strumpa - Livrustkammaren - 34490.tif",
+      "creator": "Unknown authorUnknown author",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Strumpa_-_Livrustkammaren_-_34490.tif",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.key",
+    "label": "key",
+    "fileName": "key.jpg",
+    "tags": [
+      "object",
+      "household"
+    ],
+    "categories": [
+      "familiar_object"
+    ],
+    "phonemeTargets": [
+      "initial-k"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Standard-lock-key.jpg",
+      "creator": "Evan-Amos",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Standard-lock-key.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.brush",
+    "label": "brush",
+    "fileName": "brush.jpg",
+    "tags": [
+      "object",
+      "bathroom"
+    ],
+    "categories": [
+      "familiar_object"
+    ],
+    "phonemeTargets": [
+      "initial-b"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Conair-brush.jpg",
+      "creator": "Evan-Amos",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Conair-brush.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.phone",
+    "label": "phone",
+    "fileName": "phone.jpg",
+    "tags": [
+      "object",
+      "household"
+    ],
+    "categories": [
+      "familiar_object"
+    ],
+    "phonemeTargets": [
+      "initial-f"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:LG-ENV2.jpg",
+      "creator": "Evan-Amos",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:LG-ENV2.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.sleeping",
+    "label": "sleeping",
+    "fileName": "sleeping.jpg",
+    "tags": [
+      "action",
+      "sleep"
+    ],
+    "categories": [
+      "action"
+    ],
+    "phonemeTargets": [
+      "initial-s"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "action_label"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Sleeping Puppies in Ulaanbaatar.jpg",
+      "creator": "Martin Vorel",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sleeping_Puppies_in_Ulaanbaatar.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.running",
+    "label": "running",
+    "fileName": "running.jpg",
+    "tags": [
+      "action",
+      "movement"
+    ],
+    "categories": [
+      "action"
+    ],
+    "phonemeTargets": [
+      "initial-r"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "action_label"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Running in the rain (Unsplash).jpg",
+      "creator": "Dominik Schröder wirhabenzeit",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Running_in_the_rain_(Unsplash).jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.jumping",
+    "label": "jumping",
+    "fileName": "jumping.jpg",
+    "tags": [
+      "action",
+      "movement"
+    ],
+    "categories": [
+      "action"
+    ],
+    "phonemeTargets": [
+      "initial-j"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "action_label"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Peoples jumping in La Guardia beach.jpg",
+      "creator": "Wilfredor",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Peoples_jumping_in_La_Guardia_beach.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.drinking",
+    "label": "drinking",
+    "fileName": "drinking.jpg",
+    "tags": [
+      "action",
+      "drink"
+    ],
+    "categories": [
+      "action"
+    ],
+    "phonemeTargets": [
+      "initial-d"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "action_label"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Coffee drinking vegetable seller.jpg",
+      "creator": "Wilfredor",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Coffee_drinking_vegetable_seller.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.reading",
+    "label": "reading",
+    "fileName": "reading.jpg",
+    "tags": [
+      "action",
+      "book",
+      "literacy"
+    ],
+    "categories": [
+      "action",
+      "literacy"
+    ],
+    "phonemeTargets": [
+      "initial-r"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "action_label"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Portrait of boy reading a book (1293749).jpg",
+      "creator": "Percy Benzie Abery",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Portrait_of_boy_reading_a_book_(1293749).jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.washing_hands",
+    "label": "washing hands",
+    "fileName": "washing-hands.jpg",
+    "tags": [
+      "action",
+      "body",
+      "routine"
+    ],
+    "categories": [
+      "action",
+      "routine"
+    ],
+    "phonemeTargets": [
+      "initial-w"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "action_label"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Fotoserie kinderopvang cq kinderbewaarplaats There is a nice clean little gir, Bestanddeelnr 935-2105.jpg",
+      "creator": "Anefo",
+      "license": "CC0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fotoserie_kinderopvang_cq_kinderbewaarplaats_There_is_a_nice_clean_little_gir,_Bestanddeelnr_935-2105.jpg",
+      "retrievedAt": "2026-07-08"
+    }
+  },
+  {
+    "id": "asset.plate",
+    "label": "plate",
+    "fileName": "plate.jpg",
+    "tags": [
+      "object",
+      "kitchen",
+      "food"
+    ],
+    "categories": [
+      "familiar_object",
+      "kitchen"
+    ],
+    "phonemeTargets": [
+      "initial-p"
+    ],
+    "activityEligibility": [
+      "photo_point",
+      "category_sort"
+    ],
+    "source": {
+      "provider": "Wikimedia Commons",
+      "title": "File:Fajans, tallrik - Hallwylska museet - 90481.tif",
+      "creator": "Unknown authorUnknown author",
+      "license": "Public domain",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fajans,_tallrik_-_Hallwylska_museet_-_90481.tif",
+      "retrievedAt": "2026-07-08"
+    }
+  }
+]

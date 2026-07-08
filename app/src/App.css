@@ -271,6 +271,9 @@ button:hover,
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  max-height: 310px;
+  overflow: auto;
+  padding-right: 2px;
 }
 
 .asset-tile {
@@ -284,12 +287,15 @@ button:hover,
   flex-direction: column;
   justify-content: center;
   min-width: 132px;
+  overflow: hidden;
   padding: 12px;
+  width: 132px;
 }
 
 .asset-tile.compact {
-  min-width: 74px;
-  width: 74px;
+  min-width: 82px;
+  padding: 8px;
+  width: 82px;
 }
 
 .asset-tile span {
@@ -303,9 +309,15 @@ button:hover,
 
 .asset-tile img {
   border-radius: 7px;
-  height: 82px;
+  background: #fff;
+  height: 104px;
   object-fit: cover;
-  width: 82px;
+  width: 104px;
+}
+
+.asset-tile.compact img {
+  height: 54px;
+  width: 54px;
 }
 
 .asset-tile small {
@@ -313,6 +325,15 @@ button:hover,
   font-size: 14px;
   font-weight: 700;
   margin-top: 9px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.asset-tile.compact small {
+  font-size: 12px;
+  line-height: 1.1;
+  margin-top: 6px;
 }
 
 .file-button {
@@ -397,6 +418,18 @@ input {
   min-height: 210px;
 }
 
+.choice-tile .asset-tile {
+  background: transparent;
+  border: 0;
+  max-width: 100%;
+  width: 180px;
+}
+
+.choice-tile .asset-tile img {
+  height: 140px;
+  width: 140px;
+}
+
 .choice-tile:hover,
 .choice-tile.selected {
   background: #fff8eb;
@@ -415,17 +448,45 @@ input {
   margin-bottom: 16px;
 }
 
-.stage-object,
-.stage-target {
+.stage-object {
   align-items: center;
   background: #f7f4ed;
   border: 2px solid #d8d3c8;
   border-radius: 8px;
   display: flex;
-  font-size: 78px;
-  height: 130px;
+  flex-direction: column;
+  font-size: 58px;
+  height: 154px;
   justify-content: center;
-  width: 130px;
+  padding: 10px;
+  width: 154px;
+}
+
+.stage-object img {
+  border-radius: 7px;
+  height: 104px;
+  object-fit: cover;
+  width: 104px;
+}
+
+.stage-object small {
+  color: #35413f;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-top: 8px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.stage-relation {
+  color: #d86145;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  min-width: 72px;
+  text-align: center;
 }
 
 .stage-target {
@@ -905,6 +966,19 @@ input {
     padding: 12px;
   }
 
+  .choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .choice-tile {
+    min-height: 178px;
+  }
+
+  .choice-tile .asset-tile img {
+    height: 112px;
+    width: 112px;
+  }
+
   .graph-toolbar h2 {
     font-size: 22px;
   }
@@ -936,6 +1010,7 @@ input {
 
   .object-stage {
     flex-wrap: wrap;
+    gap: 14px;
   }
 }
 
@@ -973,10 +1048,45 @@ input {
     min-height: 40px;
   }
 
+  .choice-grid {
+    gap: 10px;
+  }
+
+  .choice-tile {
+    min-height: 166px;
+    padding: 8px;
+  }
+
+  .choice-tile .asset-tile {
+    min-width: 0;
+    padding: 4px;
+    width: 100%;
+  }
+
+  .choice-tile .asset-tile img {
+    height: 112px;
+    width: 112px;
+  }
+
   .dashboard-grid,
   .activity-screen,
   .graph-shell {
     padding: 12px 10px 22px;
+  }
+
+  .stage-object {
+    height: 138px;
+    width: 138px;
+  }
+
+  .stage-object img {
+    height: 88px;
+    width: 88px;
+  }
+
+  .stage-relation {
+    min-width: 46px;
+    width: 100%;
   }
 
   .graph-toolbar h2 {

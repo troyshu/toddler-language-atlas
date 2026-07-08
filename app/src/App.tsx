@@ -37,7 +37,7 @@ const scoreChoices: Array<{ label: string; value: ScoreChoice; response: Observa
 ]
 
 const storageKey = 'tla.mvp.learner.v1'
-const assetStorageKey = 'tla.mvp.assets.v1'
+const assetStorageKey = 'tla.mvp.assets.v2'
 
 function App() {
   const initialLearner = useMemo(() => createDemoLearner(content), [])
@@ -147,7 +147,7 @@ function App() {
       )}
 
       {view === 'put-it-somewhere' && (
-        <PutItSomewhereActivity onBack={() => setView('dashboard')} onLogObservation={logObservation} />
+        <PutItSomewhereActivity assets={assets} onBack={() => setView('dashboard')} onLogObservation={logObservation} />
       )}
 
       {view === 'simulations' && <SimulationPanel results={simulations} />}
@@ -240,7 +240,7 @@ function ParentDashboard({
           </label>
         </div>
         <div className="asset-strip">
-          {assets.slice(0, 10).map((asset) => (
+          {assets.map((asset) => (
             <AssetTile asset={asset} compact key={asset.id} />
           ))}
         </div>
@@ -363,7 +363,9 @@ function PhotoPointActivity({
   onBack: () => void
   onLogObservation: (input: ObservationInput) => void
 }) {
-  const choices = assets.slice(0, 4)
+  const eligibleAssets = useMemo(() => assets.filter((asset) => isEligibleFor(asset, 'photo_point')), [assets])
+  const [round, setRound] = useState(0)
+  const choices = useMemo(() => makeAssetChoices(eligibleAssets, round, 4), [eligibleAssets, round])
   const target = choices[0]
   const [selected, setSelected] = useState<AssetItem | null>(null)
 
@@ -382,6 +384,17 @@ function PhotoPointActivity({
           </button>
         ))}
       </div>
+      <div className="activity-actions">
+        <button
+          type="button"
+          onClick={() => {
+            setRound((currentRound) => currentRound + 1)
+            setSelected(null)
+          }}
+        >
+          Next Set
+        </button>
+      </div>
       <ScoringPanel
         activityId="act.photo_point.v1"
         defaultNotes={selected ? `Selected ${selected.label}.` : 'Photo choice activity.'}
@@ -393,26 +406,33 @@ function PhotoPointActivity({
 }
 
 function PutItSomewhereActivity({
+  assets,
   onBack,
   onLogObservation,
 }: {
+  assets: AssetItem[]
   onBack: () => void
   onLogObservation: (input: ObservationInput) => void
 }) {
   const prompts = [
-    'Put the bear in the box.',
-    'Put the cup on the table.',
-    'Find the car under the chair.',
+    { object: 'bear', relation: 'in', target: 'box', text: 'Put the bear in the box.' },
+    { object: 'cup', relation: 'on', target: 'table', text: 'Put the cup on the table.' },
+    { object: 'car', relation: 'under', target: 'chair', text: 'Find the car under the chair.' },
+    { object: 'ball', relation: 'on', target: 'bed', text: 'Put the ball on the bed.' },
+    { object: 'truck', relation: 'in', target: 'box', text: 'Put the truck in the box.' },
   ]
   const [index, setIndex] = useState(0)
+  const currentPrompt = prompts[index]
+  const objectAsset = findAssetByLabel(assets, currentPrompt.object)
+  const targetAsset = findAssetByLabel(assets, currentPrompt.target)
 
   return (
     <section className="activity-screen">
-      <ActivityHeader title="Put It Somewhere" prompt={prompts[index]} onBack={onBack} />
+      <ActivityHeader title="Put It Somewhere" prompt={currentPrompt.text} onBack={onBack} />
       <div className="object-stage" aria-label="Parent-led real-object prompt">
-        <div className="stage-object">🧸</div>
-        <div className="stage-target">▢</div>
-        <div className="stage-object">🥤</div>
+        <StageAssetCard asset={objectAsset} />
+        <div className="stage-relation">{currentPrompt.relation}</div>
+        <StageAssetCard asset={targetAsset} />
       </div>
       <div className="activity-actions">
         <button type="button" onClick={() => setIndex((index + 1) % prompts.length)}>
@@ -421,7 +441,7 @@ function PutItSomewhereActivity({
       </div>
       <ScoringPanel
         activityId="act.put_it_somewhere.v1"
-        defaultNotes={prompts[index]}
+        defaultNotes={currentPrompt.text}
         evidenceLabel="Real-world transfer"
         source="real_world"
         generalization
@@ -909,13 +929,42 @@ function buildGraphLayout(graph: { nodes: SkillGraphNode[]; edges: DependencyEdg
   }
 }
 
+function isEligibleFor(asset: AssetItem, activityId: string): boolean {
+  return asset.activityEligibility?.includes(activityId) ?? true
+}
+
+function makeAssetChoices(assets: AssetItem[], round: number, size: number): AssetItem[] {
+  if (assets.length <= size) return assets
+  const start = (round * size) % assets.length
+  return Array.from({ length: size }, (_, offset) => assets[(start + offset) % assets.length])
+}
+
+function findAssetByLabel(assets: AssetItem[], label: string): AssetItem {
+  const asset = assets.find((candidate) => candidate.label === label) ?? defaultAssets.find((candidate) => candidate.label === label)
+  if (!asset) throw new Error(`Missing asset for label: ${label}`)
+  return asset
+}
+
+function StageAssetCard({ asset }: { asset: AssetItem }) {
+  return (
+    <div className="stage-object">
+      <AssetVisual asset={asset} />
+      <small>{asset.label}</small>
+    </div>
+  )
+}
+
 function AssetTile({ asset, compact = false }: { asset: AssetItem; compact?: boolean }) {
   return (
     <span className={compact ? 'asset-tile compact' : 'asset-tile'}>
-      {asset.kind === 'image' ? <img alt="" src={asset.value} /> : <span>{asset.value}</span>}
+      <AssetVisual asset={asset} />
       <small>{asset.label}</small>
     </span>
   )
+}
+
+function AssetVisual({ asset }: { asset: AssetItem }) {
+  return asset.kind === 'image' ? <img alt={asset.label} src={asset.value} /> : <span>{asset.value}</span>
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

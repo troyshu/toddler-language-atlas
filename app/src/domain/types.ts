@@ -247,10 +247,34 @@ export interface SimulationResult {
   notes: string[]
 }
 
+export interface AssetSource {
+  provider: string
+  title: string
+  creator: string
+  license: string
+  sourceUrl: string
+  retrievedAt: string
+}
+
+export interface SeedAssetDefinition {
+  id: string
+  label: string
+  fileName: string
+  tags: readonly string[]
+  categories: readonly string[]
+  phonemeTargets: readonly string[]
+  activityEligibility: readonly string[]
+  source: AssetSource
+}
+
 export interface AssetItem {
   id: string
   label: string
   tags: string[]
+  categories?: string[]
+  phonemeTargets?: string[]
+  activityEligibility?: string[]
   kind: 'emoji' | 'image'
   value: string
+  source?: AssetSource
 }
