@@ -10,18 +10,36 @@ import {
   type AssetReviewDecision,
   type AssetReviewState,
 } from './domain/assetReview'
-import { searchAssetCandidates } from './domain/assetCandidateProviders'
+import { searchAssetCandidates, type AssetCandidateSearchOptions } from './domain/assetCandidateProviders'
 import { useLocalStorageState } from './domain/storage'
 import type { AssetItem } from './domain/types'
 
 const reviewStorageKey = 'tla.assetReview.v1'
+const sourceSettingsStorageKey = 'tla.assetSourceSettings.v1'
 
 type ReviewFilter = 'all' | AssetReviewDecision
+
+interface ImageSourceSettings {
+  includeOpenSources: boolean
+  pexelsApiKey: string
+  pixabayApiKey: string
+}
+
+const initialSourceSettings: ImageSourceSettings = {
+  includeOpenSources: true,
+  pexelsApiKey: import.meta.env.VITE_PEXELS_API_KEY ?? '',
+  pixabayApiKey: import.meta.env.VITE_PIXABAY_API_KEY ?? '',
+}
 
 export function AssetReviewPanel({ assets }: { assets: AssetItem[] }) {
   const initialState = useMemo(() => mergeReviewState(assets, undefined), [assets])
   const [savedReviewState, setSavedReviewState] = useLocalStorageState<AssetReviewState>(reviewStorageKey, initialState)
+  const [savedSourceSettings, setSavedSourceSettings] = useLocalStorageState<ImageSourceSettings>(
+    sourceSettingsStorageKey,
+    initialSourceSettings,
+  )
   const reviewState = useMemo(() => mergeReviewState(assets, savedReviewState), [assets, savedReviewState])
+  const sourceSettings = useMemo(() => normalizeImageSourceSettings(savedSourceSettings), [savedSourceSettings])
   const summary = useMemo(() => reviewSummary(reviewState), [reviewState])
   const [filter, setFilter] = useState<ReviewFilter>('all')
   const [candidateQueries, setCandidateQueries] = useState<Record<string, string>>({})
@@ -36,6 +54,10 @@ export function AssetReviewPanel({ assets }: { assets: AssetItem[] }) {
 
   function setReviewState(nextState: AssetReviewState) {
     setSavedReviewState(mergeReviewState(assets, nextState))
+  }
+
+  function setSourceSettings(patch: Partial<ImageSourceSettings>) {
+    setSavedSourceSettings(normalizeImageSourceSettings({ ...sourceSettings, ...patch }))
   }
 
   function markAsset(assetId: string, decision: AssetReviewDecision) {
@@ -56,14 +78,14 @@ export function AssetReviewPanel({ assets }: { assets: AssetItem[] }) {
   }
 
   async function findCandidates(asset: AssetItem) {
-    const query = candidateQueries[asset.id]?.trim() || asset.label
+    const query = candidateQueries[asset.id]?.trim() || suggestedCandidateQuery(asset)
     setSearchingAssetId(asset.id)
     setSearchErrors((current) => ({ ...current, [asset.id]: '' }))
     try {
-      const results = await searchAssetCandidates(query, 12)
+      const results = await searchAssetCandidates(query, 12, sourceSettings)
       setCandidateResults((current) => ({ ...current, [asset.id]: results }))
       if (results.length === 0) {
-        setSearchErrors((current) => ({ ...current, [asset.id]: 'No license-safe candidates found.' }))
+        setSearchErrors((current) => ({ ...current, [asset.id]: 'No matching image candidates found.' }))
       }
     } catch (error) {
       setSearchErrors((current) => ({
@@ -129,6 +151,8 @@ export function AssetReviewPanel({ assets }: { assets: AssetItem[] }) {
           </label>
         </div>
       </div>
+
+      <ImageSourceSettingsPanel settings={sourceSettings} onChange={setSourceSettings} />
 
       <div className="review-summary-row">
         <ReviewMetric label="Total" value={summary.total.toString()} />
@@ -207,7 +231,12 @@ export function AssetReviewPanel({ assets }: { assets: AssetItem[] }) {
                   <div>
                     <p className="eyebrow">Approved Replacement</p>
                     <strong>{record.selectedCandidate.title}</strong>
+                    <span>{record.selectedCandidate.provider}</span>
                     <span>{record.selectedCandidate.license}</span>
+                    {record.selectedCandidate.creator && <span>{record.selectedCandidate.creator}</span>}
+                    <a href={record.selectedCandidate.sourceUrl} rel="noreferrer" target="_blank">
+                      Source
+                    </a>
                   </div>
                 </div>
               )}
@@ -216,11 +245,11 @@ export function AssetReviewPanel({ assets }: { assets: AssetItem[] }) {
                 <input
                   aria-label={`${asset.label} candidate query`}
                   onChange={(event) => setCandidateQueries((current) => ({ ...current, [asset.id]: event.target.value }))}
-                  placeholder={asset.label}
+                  placeholder={suggestedCandidateQuery(asset)}
                   value={candidateQueries[asset.id] ?? ''}
                 />
                 <button type="button" onClick={() => void findCandidates(asset)}>
-                  {searchingAssetId === asset.id ? 'Searching' : 'Find Candidates'}
+                  {searchingAssetId === asset.id ? 'Searching' : 'Find Images'}
                 </button>
               </div>
 
@@ -243,6 +272,59 @@ export function AssetReviewPanel({ assets }: { assets: AssetItem[] }) {
         })}
       </div>
     </section>
+  )
+}
+
+function ImageSourceSettingsPanel({
+  settings,
+  onChange,
+}: {
+  settings: ImageSourceSettings
+  onChange: (patch: Partial<ImageSourceSettings>) => void
+}) {
+  const activeSources = activeSourceLabels(settings)
+
+  return (
+    <div className="image-source-panel">
+      <div className="image-source-heading">
+        <div>
+          <p className="eyebrow">Image Sources</p>
+          <h3>Modern Candidate Search</h3>
+        </div>
+        <p>{activeSources.length > 0 ? `Active: ${activeSources.join(', ')}` : 'Active: None'}</p>
+      </div>
+
+      <div className="image-source-grid">
+        <label>
+          <span>Pexels API Key</span>
+          <input
+            autoComplete="off"
+            onChange={(event) => onChange({ pexelsApiKey: event.target.value })}
+            placeholder="Optional"
+            type="password"
+            value={settings.pexelsApiKey}
+          />
+        </label>
+        <label>
+          <span>Pixabay API Key</span>
+          <input
+            autoComplete="off"
+            onChange={(event) => onChange({ pixabayApiKey: event.target.value })}
+            placeholder="Optional"
+            type="password"
+            value={settings.pixabayApiKey}
+          />
+        </label>
+        <label className="source-toggle">
+          <input
+            checked={settings.includeOpenSources}
+            onChange={(event) => onChange({ includeOpenSources: event.target.checked })}
+            type="checkbox"
+          />
+          <span>Openverse/Wikimedia Fallback</span>
+        </label>
+      </div>
+    </div>
   )
 }
 
@@ -307,4 +389,32 @@ function reviewPillClass(decision: AssetReviewDecision): string {
   if (decision === 'needs_replacement') return 'maintenance'
   if (decision === 'approved_replacement') return 'generalization'
   return 'exploration'
+}
+
+function normalizeImageSourceSettings(input: Partial<ImageSourceSettings> | null | undefined): ImageSourceSettings {
+  return {
+    includeOpenSources: typeof input?.includeOpenSources === 'boolean' ? input.includeOpenSources : true,
+    pexelsApiKey: typeof input?.pexelsApiKey === 'string' ? input.pexelsApiKey : '',
+    pixabayApiKey: typeof input?.pixabayApiKey === 'string' ? input.pixabayApiKey : '',
+  }
+}
+
+function activeSourceLabels(settings: AssetCandidateSearchOptions): string[] {
+  const labels: string[] = []
+  if (settings.pexelsApiKey?.trim()) labels.push('Pexels')
+  if (settings.pixabayApiKey?.trim()) labels.push('Pixabay')
+  if (settings.includeOpenSources) labels.push('Openverse/Wikimedia')
+  return labels
+}
+
+function suggestedCandidateQuery(asset: AssetItem): string {
+  const categoryTerms = new Set([...(asset.categories ?? []), ...asset.tags])
+  const descriptor = categoryTerms.has('animals')
+    ? 'animal photo'
+    : categoryTerms.has('food')
+      ? 'food photo'
+      : categoryTerms.has('vehicles')
+        ? 'vehicle photo'
+        : 'everyday object photo'
+  return `${asset.label} ${descriptor}`
 }

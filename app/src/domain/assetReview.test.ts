@@ -8,7 +8,13 @@ import {
   updateReviewRecord,
   type AssetReplacementCandidate,
 } from './assetReview'
-import { mapOpenverseCandidates, mapWikimediaCandidates } from './assetCandidateProviders'
+import {
+  mapOpenverseCandidates,
+  mapPexelsCandidates,
+  mapPixabayCandidates,
+  mapWikimediaCandidates,
+  rankAndFilterAssetCandidates,
+} from './assetCandidateProviders'
 
 const candidate: AssetReplacementCandidate = {
   id: 'wikimedia:File:Better cup.jpg',
@@ -81,6 +87,56 @@ describe('asset review manifests', () => {
 })
 
 describe('asset candidate provider mapping', () => {
+  it('maps Pexels candidates', () => {
+    const candidates = mapPexelsCandidates({
+      photos: [
+        {
+          alt: 'Child holding a red cup',
+          id: 42,
+          photographer: 'Modern Photographer',
+          src: {
+            large: 'https://images.pexels.com/photos/42/large.jpeg',
+            large2x: 'https://images.pexels.com/photos/42/large2x.jpeg',
+            medium: 'https://images.pexels.com/photos/42/medium.jpeg',
+          },
+          url: 'https://www.pexels.com/photo/cup-42/',
+        },
+      ],
+    })
+
+    expect(candidates).toHaveLength(1)
+    expect(candidates[0]).toMatchObject({
+      creator: 'Modern Photographer',
+      license: 'Pexels License',
+      provider: 'Pexels',
+      title: 'Child holding a red cup',
+    })
+  })
+
+  it('maps Pixabay candidates', () => {
+    const candidates = mapPixabayCandidates({
+      hits: [
+        {
+          id: 88,
+          largeImageURL: 'https://pixabay.com/get/cup-large.jpg',
+          pageURL: 'https://pixabay.com/photos/cup-88/',
+          previewURL: 'https://cdn.pixabay.com/cup-preview.jpg',
+          tags: 'cup, coffee, drink',
+          user: 'Pixabay Photographer',
+          webformatURL: 'https://cdn.pixabay.com/cup-web.jpg',
+        },
+      ],
+    })
+
+    expect(candidates).toHaveLength(1)
+    expect(candidates[0]).toMatchObject({
+      creator: 'Pixabay Photographer',
+      license: 'Pixabay Content License',
+      provider: 'Pixabay',
+      title: 'Cup',
+    })
+  })
+
   it('maps and filters Wikimedia Commons candidates', () => {
     const candidates = mapWikimediaCandidates({
       query: {
@@ -159,5 +215,37 @@ describe('asset candidate provider mapping', () => {
       provider: 'Openverse / stocksnap',
       title: 'Cup',
     })
+  })
+
+  it('ranks modern photos ahead of public-domain fallbacks and filters artifact terms', () => {
+    const ranked = rankAndFilterAssetCandidates(
+      [
+        {
+          ...candidate,
+          id: 'wikimedia:File:Ancient cup artifact.jpg',
+          provider: 'Wikimedia Commons',
+          sourceUrl: 'https://commons.wikimedia.org/wiki/File:Ancient_cup_artifact.jpg',
+          title: 'File:Ancient cup artifact.jpg',
+        },
+        {
+          ...candidate,
+          id: 'pexels:42',
+          provider: 'Pexels',
+          license: 'Pexels License',
+          sourceUrl: 'https://www.pexels.com/photo/cup-42/',
+          title: 'Child holding a red cup',
+        },
+        {
+          ...candidate,
+          id: 'openverse:cup',
+          provider: 'Openverse / stocksnap',
+          sourceUrl: 'https://stocksnap.io/photo/cup',
+          title: 'Cup on a table',
+        },
+      ],
+      'cup everyday object photo',
+    )
+
+    expect(ranked.map((item) => item.id)).toEqual(['pexels:42', 'openverse:cup'])
   })
 })

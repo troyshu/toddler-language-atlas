@@ -1,5 +1,21 @@
 # React + TypeScript + Vite
 
+## Image Candidate Sources
+
+The Review screen can search modern image candidates from Pexels and Pixabay.
+Paste keys directly into the in-app Image Sources panel, or build with:
+
+```sh
+VITE_PEXELS_API_KEY=... VITE_PIXABAY_API_KEY=... npm run build -- --base=/toddler-language-atlas/
+```
+
+Approved replacements are stored in the exported review manifest. To make them
+durable bundled assets, run:
+
+```sh
+npm run apply-asset-review -- path/to/manifest.json
+```
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

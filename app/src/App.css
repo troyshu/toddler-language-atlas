@@ -911,6 +911,85 @@ input {
   margin: 0;
 }
 
+.image-source-panel {
+  background: #fff;
+  border: 1px solid #d8d3c8;
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.image-source-heading {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.image-source-heading h3 {
+  font-size: 20px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.image-source-heading > p {
+  color: #66716f;
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+  text-align: right;
+}
+
+.image-source-grid {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+.image-source-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.image-source-grid label > span {
+  color: #66716f;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.image-source-grid input[type='password'] {
+  background: #fff;
+  border: 1px solid #cfc8ba;
+  border-radius: 7px;
+  color: #18201f;
+  font: inherit;
+  min-height: 42px;
+  min-width: 0;
+  padding: 9px 10px;
+  width: 100%;
+}
+
+.image-source-grid .source-toggle {
+  align-items: center;
+  background: #f7f4ed;
+  border: 1px solid #eee9df;
+  border-radius: 7px;
+  display: flex;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.image-source-grid .source-toggle input {
+  height: 18px;
+  margin: 0;
+  width: 18px;
+}
+
 .asset-review-actions,
 .review-filter-row,
 .review-decision-row,
@@ -1106,6 +1185,14 @@ input {
   margin-top: 4px;
 }
 
+.approved-candidate a {
+  color: #185c5f;
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
 .candidate-search-row {
   align-items: center;
   display: grid;
@@ -1163,7 +1250,8 @@ input {
 @media (max-width: 980px) {
   .topbar,
   .section-title,
-  .asset-review-toolbar {
+  .asset-review-toolbar,
+  .image-source-heading {
     align-items: stretch;
     flex-direction: column;
   }
@@ -1210,8 +1298,13 @@ input {
   }
 
   .review-summary-row,
-  .review-metadata-grid {
+  .review-metadata-grid,
+  .image-source-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .image-source-heading > p {
+    text-align: left;
   }
 
   .simulation-panel {
@@ -1374,7 +1467,8 @@ input {
 
   .review-current,
   .review-metadata-grid,
-  .candidate-search-row {
+  .candidate-search-row,
+  .image-source-grid {
     grid-template-columns: 1fr;
   }
 
