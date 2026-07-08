@@ -1,0 +1,1062 @@
+schema_version: "0.1.0"
+project: toddler-language-atlas
+purpose: >
+  Concrete starter schema and seed content for the Toddler Language Atlas MVP.
+  YAML is the authoring format; runtime can compile it to JSON.
+
+enums:
+  mastery_states:
+    - not_seen
+    - introduced
+    - emerging_receptive
+    - emerging_expressive
+    - assisted_success
+    - independent_in_activity
+    - generalizing
+    - mastered
+    - maintenance_due
+    - stale
+    - regressed
+    - blocked
+    - deferred
+  prompt_levels:
+    - P0_independent
+    - P1_wait
+    - P2_repeat
+    - P3_gesture
+    - P4_binary_choice
+    - P5_model
+    - P6_parent_completes
+  observation_sources:
+    - app_probe
+    - parent_log
+    - real_world
+    - recheck
+  response_channels:
+    - tap
+    - point
+    - action
+    - word
+    - phrase
+    - imitation
+    - parent_judgment
+  observation_results:
+    - independent
+    - prompted
+    - partial
+    - not_yet
+    - refused
+    - no_data
+  engagement_levels:
+    - high
+    - medium
+    - low
+    - dysregulated
+
+skill_node_template:
+  id: string
+  version: integer
+  title: string
+  domain: string
+  track: string
+  age_band: string
+  description: string
+  developmental_goal: string
+  examples:
+    - string
+  prerequisites:
+    hard:
+      - skill_id: string
+        min_state: string
+        rationale: string
+    soft:
+      - skill_id: string
+        min_state: string
+        weight: number
+        rationale: string
+    anti_prerequisites:
+      - skill_id: string
+        rationale: string
+  related_skills:
+    supports:
+      - skill_id: string
+    co_practice:
+      - skill_id: string
+    transfer_to:
+      - skill_id: string
+    contrasts_with:
+      - skill_id: string
+    not_a_prerequisite:
+      - skill_id: string
+  probes:
+    - id: string
+      modality: string
+      expected_response: string
+      success_criteria: string
+      min_trials: integer
+      allowed_prompt_levels:
+        - string
+  activities:
+    - activity_id: string
+      mode: string
+      difficulty_knobs:
+        key: value
+  difficulty_knobs:
+    - id: string
+      type: string
+      default: any
+      values:
+        - any
+  mastery:
+    transition_rules:
+      generalizing: string
+      mastered: string
+    evidence_requirements:
+      min_positive_observations: integer
+      min_days: integer
+      min_contexts: integer
+      require_offscreen: boolean
+      max_prompt_level_for_mastery: string
+    recheck_interval_days: integer
+  evidence_notes:
+    source_families:
+      - string
+    rationale: string
+    assumptions:
+      - string
+    do_not_drill:
+      - string
+    contraindications:
+      - string
+
+mastery_defaults:
+  evidence_requirements:
+    min_positive_observations: 5
+    min_days: 3
+    min_contexts: 2
+    require_offscreen: true
+    max_prompt_level_for_mastery: P2_repeat
+  recheck_interval_days: 21
+  stale_after_days: 45
+  screen_only_max_state: independent_in_activity
+
+skills:
+  - id: engagement.shared_attention.v1
+    version: 1
+    title: Shared attention for parent-guided play
+    domain: engagement
+    track: engagement
+    age_band: "2-5"
+    description: Child attends with parent to photos, books, objects, or simple prompts.
+    developmental_goal: Enable co-play and observation without making the child feel tested.
+    examples:
+      - taps or points with parent nearby
+      - looks between parent and photo/object
+      - accepts short turn-taking play
+    prerequisites:
+      hard: []
+      soft: []
+      anti_prerequisites: []
+    related_skills:
+      supports:
+        - vocab.familiar_nouns.v1
+        - receptive.one_step.v1
+      co_practice: []
+      transfer_to: []
+      contrasts_with: []
+      not_a_prerequisite: []
+    probes:
+      - id: probe.shared_attention.photo_choice.v1
+        modality: app_photo
+        expected_response: tap_or_point
+        success_criteria: engages for 2-3 parent-led prompts without distress
+        min_trials: 3
+        allowed_prompt_levels: [P0_independent, P1_wait, P2_repeat, P3_gesture]
+    activities:
+      - activity_id: act.photo_point.v1
+        mode: warm_up
+        difficulty_knobs:
+          field_size: 2
+    difficulty_knobs:
+      - id: session_length_minutes
+        type: integer
+        default: 3
+        values: [3, 5, 8, 10]
+    mastery:
+      transition_rules:
+        generalizing: engages across app, book, and real-object contexts
+        mastered: engages on several days with low prompts and no distress pattern
+      evidence_requirements:
+        min_positive_observations: 5
+        min_days: 3
+        min_contexts: 2
+        require_offscreen: true
+        max_prompt_level_for_mastery: P2_repeat
+      recheck_interval_days: 30
+    evidence_notes:
+      source_families: [CDC, ASHA, AAP]
+      rationale: Shared adult interaction is the delivery mechanism for toddler language learning.
+      assumptions: []
+      do_not_drill:
+        - Do not force participation when tired, dysregulated, or uninterested.
+      contraindications:
+        - Do not use streaks, timers, or failure sounds.
+
+  - id: vocab.familiar_nouns.v1
+    version: 1
+    title: Familiar nouns across contexts
+    domain: vocabulary
+    track: vocabulary_semantics
+    age_band: "2-3"
+    description: Understands familiar people, animals, foods, toys, body items, clothing, rooms, and household objects.
+    developmental_goal: Build breadth and flexible recognition, not rote picture matching.
+    examples:
+      - cup
+      - shoe
+      - dog
+      - spoon
+      - car
+    prerequisites:
+      hard:
+        - skill_id: engagement.shared_attention.v1
+          min_state: introduced
+          rationale: Child needs some way to share attention to object/photo prompts.
+      soft: []
+      anti_prerequisites: []
+    related_skills:
+      supports:
+        - concept.categories.basic.v1
+        - questions.what_object.v1
+        - vocab.verbs.common_actions.v1
+      co_practice:
+        - act.photo_point.v1
+      transfer_to:
+        - real_world.object_find.v1
+      contrasts_with: []
+      not_a_prerequisite:
+        - print.letter_names.v1
+    probes:
+      - id: probe.identify_familiar_object_from_2.v1
+        modality: app_photo
+        expected_response: tap_or_point
+        success_criteria: selects named item from two choices
+        min_trials: 4
+        allowed_prompt_levels: [P0_independent, P1_wait, P2_repeat, P3_gesture]
+    activities:
+      - activity_id: act.photo_point.v1
+        mode: playful_practice
+        difficulty_knobs:
+          field_size: 2
+          distractor_similarity: unrelated
+    difficulty_knobs:
+      - id: field_size
+        type: integer
+        default: 2
+        values: [2, 3, 4]
+      - id: distractor_similarity
+        type: enum
+        default: unrelated
+        values: [unrelated, same_category, visually_similar]
+      - id: material
+        type: enum
+        default: own_photo
+        values: [own_photo, book_picture, real_object, stock_image]
+    mastery:
+      transition_rules:
+        generalizing: recognizes across at least two material sets or rooms
+        mastered: recognizes across days with low prompts and off-screen evidence
+      evidence_requirements:
+        min_positive_observations: 5
+        min_days: 3
+        min_contexts: 2
+        require_offscreen: true
+        max_prompt_level_for_mastery: P2_repeat
+      recheck_interval_days: 21
+    evidence_notes:
+      source_families: [CDC, NIDCD, ASHA]
+      rationale: Vocabulary breadth supports later categories, questions, functions, and narrative.
+      assumptions:
+        - Unclear pronunciation does not imply noun knowledge is absent.
+      do_not_drill:
+        - Do not rapid-fire flashcard nouns.
+        - Do not over-practice already-known nouns while ignoring verbs and relations.
+      contraindications: []
+
+  - id: vocab.verbs.common_actions.v1
+    version: 1
+    title: Common action verbs
+    domain: semantics
+    track: vocabulary_semantics
+    age_band: "2-3"
+    description: Understands and begins to use common actions in photos, routines, books, and real life.
+    developmental_goal: Expand beyond object labels into event language.
+    examples:
+      - eating
+      - sleeping
+      - running
+      - washing
+      - opening
+    prerequisites:
+      hard:
+        - skill_id: vocab.familiar_nouns.v1
+          min_state: emerging_receptive
+          rationale: Action prompts usually involve people or objects.
+      soft:
+        - skill_id: questions.what_object.v1
+          min_state: introduced
+          weight: 0.2
+          rationale: What-object questions transfer to what-action questions.
+      anti_prerequisites: []
+    related_skills:
+      supports:
+        - questions.what_action.v1
+        - narrative.picture_event_seed.v1
+        - receptive.one_step.v1
+      co_practice:
+        - act.action_match.v1
+      transfer_to: []
+      contrasts_with: []
+      not_a_prerequisite:
+        - speech.later_sounds.s_r_th.v1
+    probes:
+      - id: probe.identify_action_from_2.v1
+        modality: app_photo_or_clip
+        expected_response: tap_or_point_or_imitate
+        success_criteria: identifies named action from two choices or imitates action
+        min_trials: 4
+        allowed_prompt_levels: [P0_independent, P1_wait, P2_repeat, P3_gesture]
+    activities:
+      - activity_id: act.action_match.v1
+        mode: playful_practice
+        difficulty_knobs:
+          representation: own_photo
+          action_contrast: high
+    difficulty_knobs:
+      - id: representation
+        type: enum
+        default: own_photo
+        values: [own_photo, short_clip, book_picture, real_life]
+      - id: action_contrast
+        type: enum
+        default: high
+        values: [high, medium, subtle]
+    mastery:
+      transition_rules:
+        generalizing: identifies actions across photo/book/routine
+        mastered: uses or identifies actions across days and contexts
+      evidence_requirements:
+        min_positive_observations: 5
+        min_days: 3
+        min_contexts: 2
+        require_offscreen: true
+        max_prompt_level_for_mastery: P2_repeat
+      recheck_interval_days: 21
+    evidence_notes:
+      source_families: [ASHA, CDC]
+      rationale: Verbs support directions, questions, grammar, and narrative.
+      assumptions: []
+      do_not_drill:
+        - Do not require spoken answer if pointing or imitation demonstrates comprehension.
+      contraindications: []
+
+  - id: concept.prepositions.in_on_under.v1
+    version: 1
+    title: In, on, and under
+    domain: concepts
+    track: relations_concepts
+    age_band: "2-3"
+    description: Understands and follows simple spatial relations using real objects and familiar contexts.
+    developmental_goal: Build relational language that supports directions and where questions.
+    examples:
+      - put bear in box
+      - put cup on table
+      - find car under chair
+    prerequisites:
+      hard:
+        - skill_id: vocab.familiar_nouns.v1
+          min_state: emerging_receptive
+          rationale: Child needs object vocabulary for spatial prompts.
+        - skill_id: receptive.one_step.v1
+          min_state: introduced
+          rationale: Spatial commands are one-step directions with relation words.
+      soft: []
+      anti_prerequisites: []
+    related_skills:
+      supports:
+        - questions.where.v1
+        - receptive.two_step_related.v1
+      co_practice:
+        - act.put_it_somewhere.v1
+      transfer_to:
+        - concept.prepositions.behind_next_to.v1
+      contrasts_with: []
+      not_a_prerequisite: []
+    probes:
+      - id: probe.place_object_in_on_under.v1
+        modality: parent_led_real_object
+        expected_response: action
+        success_criteria: places or finds object using target relation
+        min_trials: 3
+        allowed_prompt_levels: [P0_independent, P1_wait, P2_repeat, P3_gesture, P4_binary_choice]
+    activities:
+      - activity_id: act.put_it_somewhere.v1
+        mode: playful_practice
+        difficulty_knobs:
+          relation_set: [in, on]
+          object_count: 2
+    difficulty_knobs:
+      - id: relation_set
+        type: list
+        default: [in, on]
+        values: [in, on, under]
+      - id: object_count
+        type: integer
+        default: 2
+        values: [2, 3, 4]
+      - id: material
+        type: enum
+        default: real_object
+        values: [real_object, own_photo, toy_scene]
+    mastery:
+      transition_rules:
+        generalizing: performs in at least two rooms/material sets
+        mastered: follows/finds all three relations across contexts with low prompts
+      evidence_requirements:
+        min_positive_observations: 6
+        min_days: 3
+        min_contexts: 2
+        require_offscreen: true
+        max_prompt_level_for_mastery: P2_repeat
+      recheck_interval_days: 21
+    evidence_notes:
+      source_families: [ASHA, CDC]
+      rationale: Spatial language supports where questions, directions, and story settings.
+      assumptions: []
+      do_not_drill:
+        - Keep it in real play; avoid worksheet-style spatial drilling.
+      contraindications: []
+
+  - id: receptive.one_step.v1
+    version: 1
+    title: One-step directions
+    domain: receptive_language
+    track: receptive_directions
+    age_band: "2-3"
+    description: Follows simple commands involving familiar objects/actions.
+    developmental_goal: Establish reliable action response to spoken language.
+    examples:
+      - roll the ball
+      - get your shoe
+      - give me the cup
+    prerequisites:
+      hard:
+        - skill_id: vocab.familiar_nouns.v1
+          min_state: emerging_receptive
+          rationale: Directions use familiar nouns.
+      soft:
+        - skill_id: vocab.verbs.common_actions.v1
+          min_state: introduced
+          weight: 0.4
+          rationale: Verb comprehension increases direction success.
+      anti_prerequisites: []
+    related_skills:
+      supports:
+        - receptive.two_step_related.v1
+        - concept.prepositions.in_on_under.v1
+      co_practice:
+        - act.tiny_treasure_hunt.v1
+      transfer_to: []
+      contrasts_with: []
+      not_a_prerequisite: []
+    probes:
+      - id: probe.follow_one_step.v1
+        modality: parent_led_real_object
+        expected_response: action
+        success_criteria: completes one familiar direction
+        min_trials: 3
+        allowed_prompt_levels: [P0_independent, P1_wait, P2_repeat, P3_gesture]
+    activities:
+      - activity_id: act.tiny_treasure_hunt.v1
+        mode: probe_and_practice
+        difficulty_knobs:
+          step_count: 1
+          object_count: 2
+    difficulty_knobs:
+      - id: object_count
+        type: integer
+        default: 2
+        values: [1, 2, 3, 4]
+      - id: action_familiarity
+        type: enum
+        default: familiar
+        values: [familiar, new_in_routine]
+    mastery:
+      transition_rules:
+        generalizing: follows across at least two routines
+        mastered: follows across days with low prompts and low frustration
+      evidence_requirements:
+        min_positive_observations: 5
+        min_days: 3
+        min_contexts: 2
+        require_offscreen: true
+        max_prompt_level_for_mastery: P2_repeat
+      recheck_interval_days: 21
+    evidence_notes:
+      source_families: [NIDCD, CDC]
+      rationale: One-step directions are a gateway to two-step routines and spatial language.
+      assumptions: []
+      do_not_drill:
+        - Avoid repeated compliance testing; embed directions in real routines.
+      contraindications: []
+
+  - id: questions.where.v1
+    version: 1
+    title: Where questions
+    domain: questions
+    track: questions_conversation
+    age_band: "2-3"
+    description: Understands and answers or acts on simple where questions using visible objects, people, or places.
+    developmental_goal: Connect spatial words, places, and question-answering.
+    examples:
+      - where is the spoon
+      - where is grandma
+      - where did the car go
+    prerequisites:
+      hard:
+        - skill_id: vocab.familiar_nouns.v1
+          min_state: emerging_receptive
+          rationale: Where questions need referents.
+      soft:
+        - skill_id: concept.prepositions.in_on_under.v1
+          min_state: introduced
+          weight: 0.5
+          rationale: Spatial relations improve where answers.
+      anti_prerequisites: []
+    related_skills:
+      supports:
+        - narrative.picture_event_seed.v1
+      co_practice:
+        - act.question_picnic.v1
+      transfer_to:
+        - concept.prepositions.behind_next_to.v1
+      contrasts_with: []
+      not_a_prerequisite: []
+    probes:
+      - id: probe.where_visible_object.v1
+        modality: photo_or_real_world
+        expected_response: point_tap_action_or_word
+        success_criteria: indicates location of visible object/person
+        min_trials: 3
+        allowed_prompt_levels: [P0_independent, P1_wait, P2_repeat, P3_gesture, P4_binary_choice]
+    activities:
+      - activity_id: act.question_picnic.v1
+        mode: playful_practice
+        difficulty_knobs:
+          answer_type: visible
+    difficulty_knobs:
+      - id: answer_type
+        type: enum
+        default: visible
+        values: [visible, hidden_after_seen, remembered]
+      - id: response_channel
+        type: enum
+        default: point_or_tap
+        values: [point_or_tap, action, spoken_word]
+    mastery:
+      transition_rules:
+        generalizing: answers across photos, books, and real objects
+        mastered: answers with low prompts across contexts
+      evidence_requirements:
+        min_positive_observations: 5
+        min_days: 3
+        min_contexts: 2
+        require_offscreen: true
+        max_prompt_level_for_mastery: P2_repeat
+      recheck_interval_days: 21
+    evidence_notes:
+      source_families: [CDC, ASHA]
+      rationale: Where questions bridge prepositions, place vocabulary, and narrative settings.
+      assumptions: []
+      do_not_drill:
+        - Do not force verbal output; pointing can be valid evidence.
+      contraindications: []
+
+  - id: narrative.picture_event_seed.v1
+    version: 1
+    title: Picture event seed
+    domain: narrative
+    track: narrative_story
+    age_band: "2-3"
+    description: Talks, points, or chooses around who is in a photo, what happened, and where it happened.
+    developmental_goal: Prepare for first/then narrative without requiring formal retell.
+    examples:
+      - daddy eating
+      - baby sleeping
+      - went park
+    prerequisites:
+      hard:
+        - skill_id: vocab.verbs.common_actions.v1
+          min_state: emerging_receptive
+          rationale: Event talk depends on action understanding.
+      soft:
+        - skill_id: questions.where.v1
+          min_state: introduced
+          weight: 0.3
+          rationale: Setting language enriches photo event talk.
+      anti_prerequisites: []
+    related_skills:
+      supports:
+        - narrative.first_then.v1
+      co_practice:
+        - act.story_snaps.v1
+      transfer_to: []
+      contrasts_with: []
+      not_a_prerequisite: []
+    probes:
+      - id: probe.describe_photo_event.v1
+        modality: parent_led_photo
+        expected_response: point_word_phrase_or_parent_judgment
+        success_criteria: identifies at least one participant or action in the photo
+        min_trials: 2
+        allowed_prompt_levels: [P0_independent, P1_wait, P2_repeat, P3_gesture, P4_binary_choice, P5_model]
+    activities:
+      - activity_id: act.story_snaps.v1
+        mode: playful_practice
+        difficulty_knobs:
+          photo_count: 2
+    difficulty_knobs:
+      - id: photo_count
+        type: integer
+        default: 2
+        values: [1, 2, 3, 4]
+      - id: parent_sentence_starter
+        type: boolean
+        default: true
+        values: [true, false]
+    mastery:
+      transition_rules:
+        generalizing: participates with more than one event type and material source
+        mastered: contributes participant/action/place with low prompts across days
+      evidence_requirements:
+        min_positive_observations: 5
+        min_days: 3
+        min_contexts: 2
+        require_offscreen: true
+        max_prompt_level_for_mastery: P2_repeat
+      recheck_interval_days: 30
+    evidence_notes:
+      source_families: [CDC, ASHA, ZeroToThree]
+      rationale: Narrative grows from real event talk, photos, books, and shared attention.
+      assumptions: []
+      do_not_drill:
+        - Do not require a complete sentence; accept pointing, words, and co-constructed phrases.
+      contraindications: []
+
+  - id: soundplay.rhyme_exposure.v1
+    version: 1
+    title: Rhyme exposure through songs and play
+    domain: sound_play
+    track: sound_play_phonological
+    age_band: "2-4"
+    description: Enjoys and participates in songs, nursery rhymes, and playful repeated sound patterns.
+    developmental_goal: Build broad oral sound sensitivity before phoneme-level work.
+    examples:
+      - nursery rhymes
+      - silly rhyming names
+      - repeated song lines
+    prerequisites:
+      hard:
+        - skill_id: engagement.shared_attention.v1
+          min_state: introduced
+          rationale: Rhyme exposure is shared oral play.
+      soft: []
+      anti_prerequisites: []
+    related_skills:
+      supports:
+        - soundplay.syllable_beats.v1
+        - soundplay.rhyme_recognition.v1
+      co_practice:
+        - act.sound_play_parade.v1
+      transfer_to: []
+      contrasts_with: []
+      not_a_prerequisite:
+        - speech.later_sounds.s_r_th.v1
+    probes:
+      - id: probe.participates_in_rhyme.v1
+        modality: parent_led_song
+        expected_response: attend_move_vocalize_or_request_more
+        success_criteria: shows engagement with rhyme or repeated sound play
+        min_trials: 2
+        allowed_prompt_levels: [P0_independent, P1_wait, P2_repeat, P5_model]
+    activities:
+      - activity_id: act.sound_play_parade.v1
+        mode: playful_exposure
+        difficulty_knobs:
+          sound_unit: rhyme
+    difficulty_knobs:
+      - id: sound_unit
+        type: enum
+        default: rhyme
+        values: [environmental_sound, rhyme, syllable, beginning_sound]
+    mastery:
+      transition_rules:
+        generalizing: engages across multiple songs/rhymes
+        mastered: participates or anticipates rhyme patterns across days
+      evidence_requirements:
+        min_positive_observations: 5
+        min_days: 3
+        min_contexts: 2
+        require_offscreen: true
+        max_prompt_level_for_mastery: P2_repeat
+      recheck_interval_days: 30
+    evidence_notes:
+      source_families: [NAEYC, ASHA]
+      rationale: Playful rhyme and rhythm support later phonological awareness.
+      assumptions:
+        - Participation can be movement, attention, laughter, or request for more; spoken rhyme production is not required.
+      do_not_drill:
+        - Do not test phoneme deletion/substitution.
+        - Do not require accurate production of later-developing sounds.
+      contraindications:
+        - Do not use pronunciation scoring.
+
+  - id: print.environmental_print.v1
+    version: 1
+    title: Environmental print carries meaning
+    domain: early_literacy
+    track: print_literacy
+    age_band: "2-4"
+    description: Notices familiar signs, logos, names, labels, and books as meaningful print.
+    developmental_goal: Build print awareness without requiring reading.
+    examples:
+      - STOP sign
+      - child's name
+      - favorite cereal box
+      - book title
+    prerequisites:
+      hard:
+        - skill_id: print.book_handling.v1
+          min_state: introduced
+          rationale: Shared book/print attention supports noticing environmental print.
+      soft:
+        - skill_id: vocab.familiar_nouns.v1
+          min_state: emerging_receptive
+          weight: 0.2
+          rationale: Familiar objects make environmental print meaningful.
+      anti_prerequisites: []
+    related_skills:
+      supports:
+        - print.letter_names.v1
+      co_practice:
+        - act.print_spotting.v1
+      transfer_to: []
+      contrasts_with: []
+      not_a_prerequisite:
+        - phonics.simple_decoding.v1
+    probes:
+      - id: probe.find_familiar_print.v1
+        modality: real_world_or_photo
+        expected_response: point_or_tap
+        success_criteria: recognizes a familiar print/logo/name target
+        min_trials: 2
+        allowed_prompt_levels: [P0_independent, P1_wait, P2_repeat, P3_gesture]
+    activities:
+      - activity_id: act.print_spotting.v1
+        mode: playful_exposure
+        difficulty_knobs:
+          print_type: familiar_logo
+    difficulty_knobs:
+      - id: print_type
+        type: enum
+        default: familiar_logo
+        values: [name, familiar_logo, sign, book_title]
+    mastery:
+      transition_rules:
+        generalizing: notices more than one print type across settings
+        mastered: identifies familiar print across days with low prompts
+      evidence_requirements:
+        min_positive_observations: 5
+        min_days: 3
+        min_contexts: 2
+        require_offscreen: true
+        max_prompt_level_for_mastery: P2_repeat
+      recheck_interval_days: 30
+    evidence_notes:
+      source_families: [ZeroToThree, NELP]
+      rationale: Early literacy includes print awareness and literacy-rich experiences, not formal reading drills.
+      assumptions: []
+      do_not_drill:
+        - Do not require decoding.
+        - Do not treat logo recognition as reading.
+      contraindications:
+        - Letter knowledge alone must not unlock phonics.
+
+placeholder_skill_ids_for_mvp:
+  - vocab.familiar_people.v1
+  - vocab.body_parts.v1
+  - vocab.foods.v1
+  - vocab.clothing.v1
+  - vocab.verbs.object_actions.v1
+  - concept.attributes.basic.v1
+  - concept.color_as_descriptor.v1
+  - concept.categories.basic.v1
+  - concept.functions.basic.v1
+  - concept.prepositions.behind_next_to.v1
+  - receptive.two_step_related.v1
+  - receptive.two_step_unrelated.v1
+  - questions.what_object.v1
+  - questions.what_action.v1
+  - questions.who.v1
+  - questions.which_choice.v1
+  - questions.why_because_seed.v1
+  - expressive.two_word_combo.v1
+  - narrative.first_then.v1
+  - soundplay.environmental_sounds.v1
+  - soundplay.syllable_beats.v1
+  - soundplay.rhyme_recognition.v1
+  - print.book_handling.v1
+  - print.letter_names.v1
+  - print.letter_sound_links.v1
+  - phonological.phoneme_awareness.v1
+  - phonics.simple_decoding.v1
+
+activities:
+  - id: act.photo_point.v1
+    title: Photo Point
+    activity_type: photo_choice
+    target_skill_ids:
+      primary: [vocab.familiar_nouns.v1]
+      secondary: [questions.what_object.v1]
+    child_ui:
+      max_choices: 4
+      uses_text: false
+      uses_parent_voice: true
+      feedback_style: neutral_parent_led
+    required_assets:
+      - type: image
+        semantic_tags: [object, person, animal, food, toy]
+    session_rules:
+      min_items: 2
+      max_items: 6
+      stop_on_frustration: true
+      no_timers: true
+      no_streaks: true
+
+  - id: act.put_it_somewhere.v1
+    title: Put It Somewhere
+    activity_type: parent_led_direction
+    target_skill_ids:
+      primary: [concept.prepositions.in_on_under.v1]
+      secondary: [receptive.one_step.v1, questions.where.v1]
+    child_ui:
+      max_choices: 0
+      uses_text: false
+      uses_parent_voice: true
+      feedback_style: parent_observation
+    required_assets:
+      - type: real_object
+        semantic_tags: [toy, container, furniture]
+    session_rules:
+      min_items: 2
+      max_items: 5
+      stop_on_frustration: true
+      no_timers: true
+      no_streaks: true
+
+  - id: act.category_baskets.v1
+    title: Category Baskets
+    activity_type: sort_into_bins
+    target_skill_ids:
+      primary: [concept.categories.basic.v1]
+      secondary: [vocab.familiar_nouns.v1, questions.which_choice.v1]
+    child_ui:
+      max_choices: 3
+      uses_text: false
+      uses_parent_voice: true
+      feedback_style: playful
+    required_assets:
+      - type: image
+        semantic_tags: [food, animal, clothing, toy, vehicle]
+    session_rules:
+      min_items: 4
+      max_items: 8
+      stop_on_frustration: true
+      no_timers: true
+      no_streaks: true
+
+  - id: act.story_snaps.v1
+    title: Story Snaps
+    activity_type: photo_sequence_talk
+    target_skill_ids:
+      primary: [narrative.picture_event_seed.v1]
+      secondary: [vocab.verbs.common_actions.v1, questions.where.v1]
+    child_ui:
+      max_choices: 4
+      uses_text: false
+      uses_parent_voice: true
+      feedback_style: parent_conversation
+    required_assets:
+      - type: image
+        semantic_tags: [event, person, place, action]
+    session_rules:
+      min_items: 1
+      max_items: 4
+      stop_on_frustration: true
+      no_timers: true
+      no_streaks: true
+
+learner_state_template:
+  learner_id: string
+  birth_month: YYYY-MM
+  content_version: tla-core@0.1.0
+  preferences:
+    favorite_assets: []
+    avoid_assets: []
+  skill_states:
+    skill_id:
+      current_state: emerging_receptive
+      confidence: 0.0
+      readiness_score: 0.0
+      mastery_score: 0.0
+      generalization_score: 0.0
+      last_seen_at: ISO-8601
+      last_mastered_at: ISO-8601-or-null
+      due_for_recheck: false
+      recent_success_rate: 0.0
+      prompt_level_distribution:
+        P0_independent: 0
+        P1_wait: 0
+        P2_repeat: 0
+        P3_gesture: 0
+        P4_binary_choice: 0
+        P5_model: 0
+        P6_parent_completes: 0
+      contexts_seen: []
+      materials_seen: []
+      evidence_events: []
+      blocked_reason: null
+      cooldown_until: null
+
+observation_template:
+  id: obs_001
+  learner_id: learner.local_child_001
+  timestamp: "2026-07-08T10:00:00-04:00"
+  source: parent_log
+  skill_ids: [concept.prepositions.in_on_under.v1]
+  activity_id: act.put_it_somewhere.v1
+  response_channel: action
+  context:
+    setting: living_room
+    material: real_object
+    partner: parent
+  result:
+    response: prompted
+    prompt_level: P3_gesture
+    attempts: 2
+    engagement: medium
+  evidence:
+    polarity: positive
+    strength: medium
+    generalization_credit: true
+    notes: Found toy under pillow after gesture.
+
+recommendation_config:
+  session_mix:
+    frontier_percent: [50, 60]
+    maintenance_percent: [20, 30]
+    exploration_percent: [10, 20]
+  scoring_weights:
+    readiness: 3.0
+    uncertainty: 1.5
+    mastery_gap: 2.0
+    under_practiced_domain: 1.2
+    parent_priority: 1.0
+    engagement_history: 1.0
+    generalization_gap: 2.5
+    stale_recheck: 1.5
+    too_hard_penalty: -3.0
+    over_drill_penalty: -2.0
+    repetition_penalty: -1.5
+    frustration_penalty: -4.0
+  hard_rules:
+    - screen_only_success_cannot_master
+    - letter_names_do_not_unlock_phonics
+    - no_pronunciation_pressure
+    - no_phonics_before_sound_awareness_and_letter_sound_links
+    - prefer_real_world_generalization_when_gap_detected
+
+simulation_profiles:
+  - id: sim.age_typical_uneven_vocab
+    description: Age-typical 2-year-old with uneven vocabulary breadth.
+    mastered: [engagement.shared_attention.v1, receptive.one_step.v1]
+    emerging: [vocab.familiar_nouns.v1, vocab.foods.v1, vocab.clothing.v1]
+    blocked_or_deferred: [phonics.simple_decoding.v1]
+    expected_frontier:
+      - concept.categories.basic.v1
+      - questions.what_object.v1
+      - vocab.foods.v1
+    expected_activity: act.category_baskets.v1
+    invariant: Must broaden semantics instead of jumping to letters or phonics.
+
+  - id: sim.advanced_vocab_weak_prepositions
+    description: Verbally advanced toddler with weaker directions/prepositions.
+    mastered: [vocab.familiar_nouns.v1, vocab.verbs.common_actions.v1, expressive.two_word_combo.v1]
+    emerging: [concept.prepositions.in_on_under.v1, receptive.two_step_related.v1, questions.where.v1]
+    blocked_or_deferred: []
+    expected_frontier:
+      - concept.prepositions.in_on_under.v1
+      - receptive.two_step_related.v1
+    expected_activity: act.put_it_somewhere.v1
+    invariant: Must not assume expressive vocabulary implies receptive spatial mastery.
+
+  - id: sim.strong_receptive_limited_expressive
+    description: Strong receptive language but limited expressive speech.
+    mastered: [vocab.familiar_nouns.v1, receptive.one_step.v1]
+    emerging: [expressive.two_word_combo.v1, questions.what_object.v1]
+    blocked_or_deferred: []
+    expected_frontier:
+      - expressive.two_word_combo.v1
+      - questions.which_choice.v1
+    expected_activity: act.photo_point.v1
+    invariant: Must accept pointing/action as comprehension evidence.
+
+  - id: sim.screen_only_success
+    description: Performs well in-game but fails to generalize off-screen.
+    mastered: []
+    emerging: [vocab.familiar_nouns.v1]
+    blocked_or_deferred: []
+    expected_frontier:
+      - real_world.object_find.v1
+      - concept.categories.basic.v1
+    expected_activity: act.put_it_somewhere.v1
+    invariant: Must recommend off-screen generalization instead of more identical app trials.
+
+  - id: sim.early_letters_weak_oral
+    description: Knows many letters early but has weaker oral language or phonological awareness.
+    mastered: [print.letter_names.v1]
+    emerging: [vocab.verbs.common_actions.v1, soundplay.rhyme_exposure.v1, concept.categories.basic.v1]
+    blocked_or_deferred: [phonics.simple_decoding.v1]
+    expected_frontier:
+      - soundplay.rhyme_exposure.v1
+      - vocab.verbs.common_actions.v1
+      - concept.categories.basic.v1
+    expected_activity: act.story_snaps.v1
+    invariant: Letter knowledge alone must not unlock decoding.
+
+  - id: sim.older_preschool_phonological_ready
+    description: Older preschool learner ready for rhyme, syllables, beginning sounds, and early letter-sound links.
+    mastered:
+      - questions.what_action.v1
+      - narrative.first_then.v1
+      - soundplay.rhyme_recognition.v1
+      - soundplay.syllable_beats.v1
+      - print.letter_names.v1
+    emerging:
+      - soundplay.beginning_sound_noticing.v1
+      - print.letter_sound_links.v1
+    blocked_or_deferred: []
+    expected_frontier:
+      - soundplay.beginning_sound_noticing.v1
+      - print.letter_sound_links.v1
+    expected_activity: act.sound_play_parade.v1
+    invariant: May approach letter-sound links only after oral language and sound-play evidence.
