@@ -11,13 +11,30 @@ import {
   type DependencyEdge,
   type SkillGraphNode,
 } from './domain/graph'
-import { createDemoLearner, learnerFromSimulation, makeObservation, promptLevels, recordObservation } from './domain/mastery'
+import { createDemoLearner, learnerFromSimulation, makeObservation, recordObservation } from './domain/mastery'
 import { recommendNextActivities } from './domain/recommendations'
 import { runSimulationSuite } from './domain/simulations'
 import { useLocalStorageState } from './domain/storage'
 import type { AssetItem, LearnerState, ObservationResult, PromptLevel, Recommendation, SkillNode } from './domain/types'
 
 type ViewMode = 'dashboard' | 'graph' | 'photo-point' | 'put-it-somewhere' | 'simulations'
+type ScoreChoice = 'got_it' | 'with_help' | 'almost' | 'not_yet'
+
+const activityHelpOptions: Array<{ label: string; value: PromptLevel }> = [
+  { label: 'No Help', value: 'P0_independent' },
+  { label: 'Waited', value: 'P1_wait' },
+  { label: 'Repeated', value: 'P2_repeat' },
+  { label: 'Pointed', value: 'P3_gesture' },
+  { label: 'Choice', value: 'P4_binary_choice' },
+  { label: 'Showed', value: 'P5_model' },
+]
+
+const scoreChoices: Array<{ label: string; value: ScoreChoice; response: ObservationResult }> = [
+  { label: 'Got It', value: 'got_it', response: 'independent' },
+  { label: 'With Help', value: 'with_help', response: 'prompted' },
+  { label: 'Almost', value: 'almost', response: 'partial' },
+  { label: 'Not Yet', value: 'not_yet', response: 'not_yet' },
+]
 
 const storageKey = 'tla.mvp.learner.v1'
 const assetStorageKey = 'tla.mvp.assets.v1'
@@ -157,9 +174,6 @@ function ParentDashboard({
   onResetDemo: () => void
   onStartActivity: (activityId: string) => void
 }) {
-  const [selectedSkill, setSelectedSkill] = useState('concept.prepositions.in_on_under.v1')
-  const [note, setNote] = useState('')
-
   return (
     <section className="dashboard-grid">
       <div className="summary-panel">
@@ -232,53 +246,111 @@ function ParentDashboard({
         </div>
       </div>
 
-      <div className="log-panel">
-        <div className="section-title">
-          <h2>Off-Screen Evidence</h2>
-          <p>{learner.observations[0]?.timestamp ? new Date(learner.observations.at(-1)!.timestamp).toLocaleTimeString() : ''}</p>
-        </div>
-        <div className="manual-log">
-          <select value={selectedSkill} onChange={(event) => setSelectedSkill(event.target.value)}>
-            {content.skills.slice(0, 34).map((skill) => (
-              <option key={skill.id} value={skill.id}>
-                {skill.title}
-              </option>
-            ))}
-          </select>
-          <input
-            value={note}
-            placeholder="Brief observation"
-            onChange={(event) => setNote(event.target.value)}
-          />
-          <button
-            type="button"
-            onClick={() => {
-              onLogObservation({
-                skillIds: [selectedSkill],
-                activityId: 'act.offscreen_parent_log.v1',
-                response: 'prompted',
-                promptLevel: 'P2_repeat',
-                source: 'real_world',
-                generalization: true,
-                notes: note || 'Real-world parent observation.',
-                setting: 'home',
-                material: 'real_object',
-              })
-              setNote('')
-            }}
-          >
-            Log
-          </button>
-        </div>
-        <div className="observation-list">
-          {learner.observations.slice(-5).reverse().map((observation) => (
-            <p key={observation.id}>
-              <strong>{observation.result.response}</strong> · {observation.skill_ids[0].replace('.v1', '')}
-            </p>
-          ))}
-        </div>
-      </div>
+      <ParentPromptPanel recommendations={recommendations} onLogObservation={onLogObservation} />
+
+      <QuickLogPanel learner={learner} onLogObservation={onLogObservation} />
     </section>
+  )
+}
+
+function ParentPromptPanel({
+  recommendations,
+  onLogObservation,
+}: {
+  recommendations: Recommendation[]
+  onLogObservation: (input: ObservationInput) => void
+}) {
+  const parentPrompts = recommendations.slice(0, 3).map((recommendation, index) => makeParentPrompt(recommendation, index))
+
+  return (
+    <div className="parent-prompt-panel">
+      <div className="section-title">
+        <h2>Today&apos;s Parent Prompts</h2>
+        <p>Real-world transfer</p>
+      </div>
+      <div className="parent-prompt-list">
+        {parentPrompts.map((prompt) => (
+          <article className="parent-prompt-card" key={prompt.skillId}>
+            <div>
+              <p className={`pill ${prompt.kind}`}>{prompt.context}</p>
+              <h3>{prompt.skillTitle}</h3>
+              <p>{prompt.action}</p>
+            </div>
+            <ResultButtonRow
+              compact
+              onChoose={(choice) =>
+                onLogObservation({
+                  skillIds: [prompt.skillId],
+                  activityId: 'act.parent_prompt.v1',
+                  response: choice.response,
+                  promptLevel: promptLevelForChoice(choice.value, 'P2_repeat'),
+                  source: 'real_world',
+                  generalization: true,
+                  notes: prompt.action,
+                  setting: prompt.setting,
+                  material: prompt.material,
+                })
+              }
+            />
+          </article>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function QuickLogPanel({
+  learner,
+  onLogObservation,
+}: {
+  learner: LearnerState
+  onLogObservation: (input: ObservationInput) => void
+}) {
+  const [selectedSkill, setSelectedSkill] = useState('concept.prepositions.in_on_under.v1')
+  const [note, setNote] = useState('')
+  const selectedSkillTitle = content.skills.find((skill) => skill.id === selectedSkill)?.title ?? selectedSkill
+  const lastObservation = learner.observations.at(-1)
+
+  return (
+    <div className="log-panel">
+      <div className="section-title">
+        <h2>Quick Log</h2>
+        <p>{lastObservation ? new Date(lastObservation.timestamp).toLocaleTimeString() : ''}</p>
+      </div>
+      <div className="quick-log-fields">
+        <select value={selectedSkill} onChange={(event) => setSelectedSkill(event.target.value)}>
+          {content.skills.slice(0, 34).map((skill) => (
+            <option key={skill.id} value={skill.id}>
+              {skill.title}
+            </option>
+          ))}
+        </select>
+        <input value={note} placeholder="What happened?" onChange={(event) => setNote(event.target.value)} />
+      </div>
+      <ResultButtonRow
+        onChoose={(choice) => {
+          onLogObservation({
+            skillIds: [selectedSkill],
+            activityId: 'act.quick_parent_log.v1',
+            response: choice.response,
+            promptLevel: promptLevelForChoice(choice.value, 'P2_repeat'),
+            source: 'parent_log',
+            generalization: true,
+            notes: note || selectedSkillTitle,
+            setting: 'home',
+            material: 'real_object',
+          })
+          setNote('')
+        }}
+      />
+      <div className="observation-list">
+        {learner.observations.slice(-5).reverse().map((observation) => (
+          <p key={observation.id}>
+            <strong>{formatLabel(observation.result.response)}</strong> · {observation.skill_ids[0].replace('.v1', '')}
+          </p>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -313,8 +385,6 @@ function PhotoPointActivity({
       <ScoringPanel
         activityId="act.photo_point.v1"
         defaultNotes={selected ? `Selected ${selected.label}.` : 'Photo choice activity.'}
-        defaultSource="app_probe"
-        generalizationDefault={false}
         skillIds={['vocab.familiar_nouns.v1', 'questions.what_object.v1']}
         onScore={onLogObservation}
       />
@@ -352,8 +422,11 @@ function PutItSomewhereActivity({
       <ScoringPanel
         activityId="act.put_it_somewhere.v1"
         defaultNotes={prompts[index]}
-        defaultSource="real_world"
-        generalizationDefault
+        evidenceLabel="Real-world transfer"
+        source="real_world"
+        generalization
+        setting="home"
+        material="real_object"
         skillIds={['concept.prepositions.in_on_under.v1', 'receptive.one_step.v1']}
         onScore={onLogObservation}
       />
@@ -378,84 +451,122 @@ function ActivityHeader({ title, prompt, onBack }: { title: string; prompt: stri
 function ScoringPanel({
   activityId,
   defaultNotes,
-  defaultSource,
-  generalizationDefault,
+  evidenceLabel = 'App evidence',
+  generalization = false,
+  material = 'own_photo',
+  setting = 'app',
   skillIds,
+  source = 'app_probe',
   onScore,
 }: {
   activityId: string
   defaultNotes: string
-  defaultSource: ObservationInput['source']
-  generalizationDefault: boolean
+  evidenceLabel?: string
+  generalization?: boolean
+  material?: string
+  setting?: string
   skillIds: string[]
+  source?: ObservationInput['source']
   onScore: (input: ObservationInput) => void
 }) {
-  const [promptLevel, setPromptLevel] = useState<PromptLevel>('P0_independent')
-  const [source, setSource] = useState<ObservationInput['source']>(defaultSource)
-  const [generalization, setGeneralization] = useState(generalizationDefault)
-  const scoreOptions: Array<{ label: string; value: ObservationResult }> = [
-    { label: 'Independent', value: 'independent' },
-    { label: 'Prompted', value: 'prompted' },
-    { label: 'Partial', value: 'partial' },
-    { label: 'Not Yet', value: 'not_yet' },
-  ]
+  const [helpGiven, setHelpGiven] = useState<PromptLevel>('P0_independent')
 
   return (
     <div className="scoring-panel">
-      <div className="score-controls">
-        <label>
-          Prompt
-          <select value={promptLevel} onChange={(event) => setPromptLevel(event.target.value as PromptLevel)}>
-            {promptLevels.map((level) => (
-              <option key={level} value={level}>
-                {formatLabel(level.replace(/^P\d_/, ''))}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Source
-          <select value={source} onChange={(event) => setSource(event.target.value as ObservationInput['source'])}>
-            <option value="app_probe">App</option>
-            <option value="real_world">Real world</option>
-            <option value="parent_log">Parent log</option>
-            <option value="recheck">Recheck</option>
-          </select>
-        </label>
-        <label className="checkline">
-          <input
-            checked={generalization}
-            type="checkbox"
-            onChange={(event) => setGeneralization(event.target.checked)}
-          />
-          Generalized
-        </label>
+      <div className="scoring-header">
+        <div>
+          <p className="eyebrow">Activity Result</p>
+          <h3>Score This Round</h3>
+        </div>
+        <span>{evidenceLabel}</span>
       </div>
-      <div className="score-buttons">
-        {scoreOptions.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() =>
-              onScore({
-                skillIds,
-                activityId,
-                response: option.value,
-                promptLevel,
-                source,
-                generalization,
-                notes: defaultNotes,
-                setting: source === 'app_probe' ? 'app' : 'home',
-                material: source === 'app_probe' ? 'own_photo' : 'real_object',
-              })
-            }
-          >
-            {option.label}
-          </button>
-        ))}
+      <div className="help-selector" aria-label="Help given">
+        <p>Help Given</p>
+        <div className="help-options">
+          {activityHelpOptions.map((option) => (
+            <button
+              className={helpGiven === option.value ? 'active' : ''}
+              key={option.value}
+              type="button"
+              onClick={() => setHelpGiven(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
+      <ResultButtonRow
+        onChoose={(choice) =>
+          onScore({
+            skillIds,
+            activityId,
+            response: choice.response,
+            promptLevel: promptLevelForChoice(choice.value, helpGiven),
+            source,
+            generalization,
+            notes: defaultNotes,
+            setting,
+            material,
+          })
+        }
+      />
     </div>
   )
+}
+
+function ResultButtonRow({
+  compact = false,
+  onChoose,
+}: {
+  compact?: boolean
+  onChoose: (choice: (typeof scoreChoices)[number]) => void
+}) {
+  return (
+    <div className={compact ? 'score-buttons compact' : 'score-buttons'}>
+      {scoreChoices.map((choice) => (
+        <button key={choice.value} type="button" onClick={() => onChoose(choice)}>
+          {choice.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function promptLevelForChoice(choice: ScoreChoice, helpGiven: PromptLevel): PromptLevel {
+  if (choice === 'got_it') return 'P0_independent'
+  if (choice === 'with_help' && helpGiven === 'P0_independent') return 'P2_repeat'
+  return helpGiven
+}
+
+function makeParentPrompt(recommendation: Recommendation, index: number) {
+  const contexts = [
+    { label: 'Snack', setting: 'kitchen', material: 'real_object' },
+    { label: 'Cleanup', setting: 'playroom', material: 'real_object' },
+    { label: 'Book', setting: 'reading', material: 'book' },
+  ]
+  const context = contexts[index % contexts.length]
+  return {
+    action: parentPromptAction(recommendation),
+    context: context.label,
+    kind: recommendation.kind,
+    material: context.material,
+    setting: context.setting,
+    skillId: recommendation.skill_id,
+    skillTitle: recommendation.skill_title,
+  }
+}
+
+function parentPromptAction(recommendation: Recommendation): string {
+  const id = recommendation.skill_id
+  const title = recommendation.skill_title.toLowerCase()
+  if (id.includes('preposition') || title.includes('preposition')) return 'Ask for one placement: in, on, or under.'
+  if (id.includes('one_step') || title.includes('one step')) return 'Give one short direction with a familiar object.'
+  if (id.includes('where') || title.includes('where')) return 'Hide a toy in view, then ask where it is.'
+  if (id.includes('what_object') || title.includes('what')) return 'Point to a familiar thing and ask what it is.'
+  if (id.includes('category') || title.includes('categor')) return 'Sort two familiar things into a simple group.'
+  if (id.includes('verb') || title.includes('action')) return 'Act out one familiar action and name it together.'
+  if (id.includes('noun') || title.includes('vocab')) return 'Name three familiar things during the routine.'
+  return `Work on ${recommendation.skill_title.toLowerCase()} during a normal routine.`
 }
 
 function SimulationPanel({ results }: { results: ReturnType<typeof runSimulationSuite> }) {

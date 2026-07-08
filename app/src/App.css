@@ -100,17 +100,20 @@ button:hover,
   display: grid;
   gap: 18px;
   grid-template-columns: minmax(0, 1.3fr) minmax(330px, 0.7fr);
+  min-width: 0;
   padding: 22px 28px 34px;
 }
 
 .summary-panel,
 .coverage-panel,
 .asset-panel,
+.parent-prompt-panel,
 .log-panel,
 .simulation-panel {
   background: #fff;
   border: 1px solid #d8d3c8;
   border-radius: 8px;
+  min-width: 0;
   padding: 18px;
 }
 
@@ -160,6 +163,7 @@ button:hover,
 }
 
 .recommendation-list,
+.parent-prompt-list,
 .coverage-list,
 .simulation-grid,
 .observation-list {
@@ -167,7 +171,8 @@ button:hover,
   gap: 10px;
 }
 
-.recommendation-card {
+.recommendation-card,
+.parent-prompt-card {
   align-items: center;
   border: 1px solid #d8d3c8;
   border-radius: 8px;
@@ -178,6 +183,7 @@ button:hover,
 }
 
 .recommendation-card h3,
+.parent-prompt-card h3,
 .simulation-card h3 {
   font-size: 17px;
   line-height: 1.2;
@@ -185,9 +191,20 @@ button:hover,
 }
 
 .recommendation-card p,
+.parent-prompt-card p,
 .simulation-card p {
   color: #66716f;
   margin: 0;
+}
+
+.parent-prompt-card {
+  align-items: stretch;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.parent-prompt-card .score-buttons {
+  margin-top: 2px;
 }
 
 .pill {
@@ -309,10 +326,20 @@ button:hover,
   position: absolute;
 }
 
-.manual-log {
+.quick-log-fields {
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.7fr) auto;
+}
+
+.quick-log-fields {
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 0.8fr);
+  margin-bottom: 10px;
+  min-width: 0;
+}
+
+.quick-log-fields select,
+.quick-log-fields input {
+  min-width: 0;
 }
 
 select,
@@ -419,35 +446,81 @@ input {
   padding: 14px;
 }
 
-.score-controls {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 1fr 1fr auto;
+.scoring-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
   margin-bottom: 12px;
 }
 
-.score-controls label {
-  color: #66716f;
-  display: grid;
+.scoring-header h3 {
+  font-size: 20px;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.scoring-header span {
+  background: #e8f2ef;
+  border-radius: 999px;
+  color: #185c5f;
   font-size: 13px;
-  font-weight: 700;
-  gap: 5px;
+  font-weight: 800;
+  padding: 6px 10px;
+  white-space: nowrap;
 }
 
-.checkline {
-  align-items: center;
-  display: flex !important;
-  gap: 8px !important;
+.help-selector {
+  margin-bottom: 12px;
 }
 
-.checkline input {
-  min-height: 0;
+.help-selector p {
+  color: #66716f;
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0 0 7px;
+}
+
+.help-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.help-options button {
+  background: #fff;
+  border-color: #d8d3c8;
+  color: #25302e;
+  min-height: 36px;
+  padding: 7px 10px;
+}
+
+.help-options button.active {
+  background: #185c5f;
+  border-color: #185c5f;
+  color: #fff;
 }
 
 .score-buttons {
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(4, 1fr);
+  min-width: 0;
+}
+
+.score-buttons.compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.score-buttons button {
+  min-width: 0;
+  white-space: normal;
+}
+
+.score-buttons.compact button {
+  font-size: 14px;
+  min-height: 38px;
+  padding: 7px 8px;
 }
 
 .score-buttons button:nth-child(1) {
@@ -788,13 +861,11 @@ input {
   }
 
   .dashboard-grid,
-  .simulation-grid,
-  .choice-grid,
-  .graph-layout,
-  .graph-toolbar,
-  .score-controls,
-  .score-buttons,
-  .manual-log {
+    .simulation-grid,
+    .choice-grid,
+    .graph-layout,
+    .graph-toolbar,
+    .score-buttons {
     grid-template-columns: 1fr;
   }
 
@@ -812,9 +883,17 @@ input {
     grid-template-columns: 1fr;
   }
 
-  .recommendation-card {
+  .recommendation-card,
+  .parent-prompt-card,
+  .scoring-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .quick-log-fields,
+  .score-buttons,
+  .score-buttons.compact {
+    grid-template-columns: 1fr 1fr;
   }
 
   .coverage-row {
@@ -882,6 +961,16 @@ input {
     font-size: 14px;
     min-width: 0;
     padding: 8px 10px;
+  }
+
+  .score-buttons,
+  .score-buttons.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .score-buttons.compact button {
+    font-size: 15px;
+    min-height: 40px;
   }
 
   .dashboard-grid,
