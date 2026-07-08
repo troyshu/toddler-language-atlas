@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { defaultAssets } from './domain/assets'
 import { content } from './domain/content'
@@ -512,7 +512,8 @@ function GraphPanel({ learner, recommendations }: { learner: LearnerState; recom
     ...selectedPrereqs.map((edge) => edge.prerequisiteId),
     ...selectedUnlocks.map((edge) => edge.topicId),
   ])
-  const layout = useMemo(() => buildGraphLayout(graph), [graph])
+  const compactGraph = useMediaQuery('(max-width: 520px)')
+  const layout = useMemo(() => buildGraphLayout(graph, compactGraph ? 'compact' : 'regular'), [compactGraph, graph])
 
   return (
     <section className="graph-shell">
@@ -538,58 +539,60 @@ function GraphPanel({ learner, recommendations }: { learner: LearnerState; recom
       </div>
 
       <div className="graph-layout">
-        <div className="graph-canvas" style={{ height: layout.height, width: layout.width }}>
-          <svg aria-hidden="true" className="edge-layer" height={layout.height} width={layout.width}>
-            {graph.edges.map((edge) => {
-              const from = layout.nodes.get(edge.prerequisiteId)
-              const to = layout.nodes.get(edge.topicId)
-              if (!from || !to) return null
-              const active = pathIds.has(edge.prerequisiteId) && pathIds.has(edge.topicId)
+        <div className="graph-scroll" aria-label="Scrollable skill graph">
+          <div className="graph-canvas" style={{ minHeight: layout.height, width: layout.width }}>
+            <svg aria-hidden="true" className="edge-layer" height={layout.height} width={layout.width}>
+              {graph.edges.map((edge) => {
+                const from = layout.nodes.get(edge.prerequisiteId)
+                const to = layout.nodes.get(edge.topicId)
+                if (!from || !to) return null
+                const active = pathIds.has(edge.prerequisiteId) && pathIds.has(edge.topicId)
+                return (
+                  <path
+                    className={`graph-edge ${edge.strength} ${active ? 'active' : ''}`}
+                    d={`M ${from.x + from.width} ${from.y + from.height / 2} C ${from.x + from.width + 70} ${
+                      from.y + from.height / 2
+                    }, ${to.x - 70} ${to.y + to.height / 2}, ${to.x} ${to.y + to.height / 2}`}
+                    key={edge.id}
+                  />
+                )
+              })}
+            </svg>
+            {layout.domainLabels.map((label) => (
+              <div className="domain-label" key={label.domain} style={{ top: label.y }}>
+                {formatLabel(label.domain)}
+              </div>
+            ))}
+            {graph.nodes.map((node) => {
+              const position = layout.nodes.get(node.id)
+              const state = overlayLearner.skill_states[node.id]?.current_state ?? 'not_seen'
+              if (!position) return null
               return (
-                <path
-                  className={`graph-edge ${edge.strength} ${active ? 'active' : ''}`}
-                  d={`M ${from.x + from.width} ${from.y + from.height / 2} C ${from.x + from.width + 70} ${
-                    from.y + from.height / 2
-                  }, ${to.x - 70} ${to.y + to.height / 2}, ${to.x} ${to.y + to.height / 2}`}
-                  key={edge.id}
-                />
+                <button
+                  className={[
+                    'graph-node',
+                    `domain-${safeClass(node.domain)}`,
+                    `state-${safeClass(state)}`,
+                    frontierIds.has(node.id) ? 'frontier-node' : '',
+                    selectedSkill.id === node.id ? 'selected-node' : '',
+                    pathIds.has(node.id) ? 'path-node' : '',
+                  ].join(' ')}
+                  key={node.id}
+                  style={{
+                    left: position.x,
+                    top: position.y,
+                    width: position.width,
+                    height: position.height,
+                  }}
+                  type="button"
+                  onClick={() => setSelectedSkillId(node.id)}
+                >
+                  <span>{node.name}</span>
+                  <small>{formatLabel(node.domain)}</small>
+                </button>
               )
             })}
-          </svg>
-          {layout.domainLabels.map((label) => (
-            <div className="domain-label" key={label.domain} style={{ top: label.y }}>
-              {formatLabel(label.domain)}
-            </div>
-          ))}
-          {graph.nodes.map((node) => {
-            const position = layout.nodes.get(node.id)
-            const state = overlayLearner.skill_states[node.id]?.current_state ?? 'not_seen'
-            if (!position) return null
-            return (
-              <button
-                className={[
-                  'graph-node',
-                  `domain-${safeClass(node.domain)}`,
-                  `state-${safeClass(state)}`,
-                  frontierIds.has(node.id) ? 'frontier-node' : '',
-                  selectedSkill.id === node.id ? 'selected-node' : '',
-                  pathIds.has(node.id) ? 'path-node' : '',
-                ].join(' ')}
-                key={node.id}
-                style={{
-                  left: position.x,
-                  top: position.y,
-                  width: position.width,
-                  height: position.height,
-                }}
-                type="button"
-                onClick={() => setSelectedSkillId(node.id)}
-              >
-                <span>{node.name}</span>
-                <small>{formatLabel(node.domain)}</small>
-              </button>
-            )
-          })}
+          </div>
         </div>
 
         <SkillInspector
@@ -702,7 +705,24 @@ function InspectorSection({
   )
 }
 
-function buildGraphLayout(graph: { nodes: SkillGraphNode[]; edges: DependencyEdge[] }) {
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia(query).matches
+  })
+
+  useEffect(() => {
+    const media = window.matchMedia(query)
+    const update = () => setMatches(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [query])
+
+  return matches
+}
+
+function buildGraphLayout(graph: { nodes: SkillGraphNode[]; edges: DependencyEdge[] }, density: 'regular' | 'compact' = 'regular') {
   const domainOrder = [
     'engagement',
     'vocabulary',
@@ -745,10 +765,12 @@ function buildGraphLayout(graph: { nodes: SkillGraphNode[]; edges: DependencyEdg
   const domainLabels: Array<{ domain: string; y: number }> = []
   let yCursor = 34
   let maxLevel = 0
-  const width = 194
-  const height = 58
-  const xGap = 244
-  const yGap = 73
+  const compact = density === 'compact'
+  const width = compact ? 170 : 194
+  const height = compact ? 68 : 58
+  const xStart = compact ? 118 : 150
+  const xGap = compact ? 230 : 244
+  const yGap = compact ? 82 : 73
 
   const orderedDomains = [...new Set([...domainOrder, ...graph.nodes.map((node) => node.domain)])]
   for (const domain of orderedDomains) {
@@ -759,7 +781,7 @@ function buildGraphLayout(graph: { nodes: SkillGraphNode[]; edges: DependencyEdg
       const level = levelFor(node.id)
       maxLevel = Math.max(maxLevel, level)
       nodes.set(node.id, {
-        x: 150 + level * xGap,
+        x: xStart + level * xGap,
         y: yCursor + index * yGap,
         width,
         height,
@@ -771,7 +793,7 @@ function buildGraphLayout(graph: { nodes: SkillGraphNode[]; edges: DependencyEdg
   return {
     nodes,
     domainLabels,
-    width: Math.max(980, 380 + (maxLevel + 1) * xGap),
+    width: Math.max(compact ? 860 : 980, (compact ? 300 : 380) + (maxLevel + 1) * xGap),
     height: yCursor + 20,
   }
 }

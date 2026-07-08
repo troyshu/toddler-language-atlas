@@ -1,5 +1,6 @@
 .app-shell {
   min-height: 100vh;
+  min-width: 0;
   background: #f7f4ed;
   color: #18201f;
 }
@@ -40,7 +41,12 @@
   border-radius: 8px;
   display: flex;
   gap: 3px;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding: 3px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 button,
@@ -67,8 +73,11 @@ button:hover,
 .mode-tabs button {
   background: transparent;
   color: #35413f;
+  flex: 0 0 auto;
   min-height: 34px;
+  min-width: 74px;
   padding: 7px 12px;
+  white-space: nowrap;
 }
 
 .mode-tabs button.active {
@@ -514,6 +523,18 @@ input {
   display: grid;
   gap: 16px;
   grid-template-columns: minmax(0, 1fr) 360px;
+  min-width: 0;
+}
+
+.graph-scroll {
+  background: #fff;
+  border: 1px solid #d8d3c8;
+  border-radius: 8px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .graph-canvas {
@@ -522,10 +543,8 @@ input {
     linear-gradient(180deg, rgba(216, 211, 200, 0.35) 1px, transparent 1px),
     #fff;
   background-size: 48px 48px;
-  border: 1px solid #d8d3c8;
-  border-radius: 8px;
   min-height: 620px;
-  overflow: auto;
+  overflow: visible;
   position: relative;
 }
 
@@ -743,8 +762,29 @@ input {
     flex-direction: column;
   }
 
+  .topbar {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .topbar > div {
+    min-width: 0;
+  }
+
+  .topbar h1 {
+    font-size: 25px;
+    line-height: 1.15;
+  }
+
   .mode-tabs {
-    overflow-x: auto;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .mode-tabs button {
+    min-height: 42px;
+    min-width: auto;
+    padding: 8px 12px;
   }
 
   .dashboard-grid,
@@ -758,7 +798,52 @@ input {
     grid-template-columns: 1fr;
   }
 
+  .dashboard-grid,
+  .activity-screen,
+  .graph-shell {
+    padding: 16px;
+  }
+
+  .simulation-panel {
+    margin: 16px;
+  }
+
+  .metric-row {
+    grid-template-columns: 1fr;
+  }
+
+  .recommendation-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .coverage-row {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-toolbar {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .graph-toolbar h2 {
+    font-size: 22px;
+  }
+
+  .graph-toolbar select,
+  .validation-badge {
+    width: 100%;
+  }
+
+  .graph-scroll {
+    max-height: 58vh;
+  }
+
+  .skill-inspector {
+    position: static;
+  }
+
+  .inspector-grid {
     grid-template-columns: 1fr;
   }
 
@@ -772,5 +857,62 @@ input {
 
   .object-stage {
     flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    padding: 14px 10px;
+  }
+
+  .topbar h1 {
+    font-size: 23px;
+  }
+
+  .mode-tabs {
+    border-radius: 7px;
+    flex-wrap: wrap;
+    gap: 2px;
+    overflow-x: visible;
+    padding: 3px;
+  }
+
+  .mode-tabs button {
+    flex: 1 1 calc(33.333% - 2px);
+    font-size: 14px;
+    min-width: 0;
+    padding: 8px 10px;
+  }
+
+  .dashboard-grid,
+  .activity-screen,
+  .graph-shell {
+    padding: 12px 10px 22px;
+  }
+
+  .graph-toolbar h2 {
+    font-size: 21px;
+  }
+
+  .graph-scroll {
+    max-height: 62vh;
+  }
+
+  .domain-label {
+    font-size: 11px;
+    left: 16px;
+    width: 96px;
+  }
+
+  .graph-node {
+    padding: 7px 9px;
+  }
+
+  .graph-node span {
+    font-size: 12px;
+  }
+
+  .skill-inspector {
+    padding: 12px;
   }
 }
