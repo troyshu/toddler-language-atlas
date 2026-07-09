@@ -463,8 +463,9 @@ input {
 .choice-grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(4, minmax(140px, 1fr));
-  margin-bottom: 18px;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  margin: 0 auto 18px;
+  max-width: 760px;
 }
 
 .choice-tile {
@@ -472,19 +473,21 @@ input {
   border: 3px solid #d8d3c8;
   border-radius: 8px;
   color: #18201f;
-  min-height: 210px;
+  min-height: 260px;
+  padding: 10px;
 }
 
 .choice-tile .asset-tile {
   background: transparent;
   border: 0;
   max-width: 100%;
-  width: 180px;
+  min-width: 0;
+  width: 220px;
 }
 
 .choice-tile .asset-tile img {
-  height: 140px;
-  width: 140px;
+  height: 176px;
+  width: 176px;
 }
 
 .choice-tile:hover,
@@ -1400,12 +1403,12 @@ input {
   }
 
   .choice-tile {
-    min-height: 178px;
+    min-height: 220px;
   }
 
   .choice-tile .asset-tile img {
-    height: 112px;
-    width: 112px;
+    height: 154px;
+    width: 154px;
   }
 
   .graph-toolbar h2 {
@@ -1498,7 +1501,7 @@ input {
   }
 
   .choice-tile {
-    min-height: 166px;
+    min-height: 188px;
     padding: 8px;
   }
 
@@ -1509,8 +1512,8 @@ input {
   }
 
   .choice-tile .asset-tile img {
-    height: 112px;
-    width: 112px;
+    height: 132px;
+    width: 132px;
   }
 
   .dashboard-grid,

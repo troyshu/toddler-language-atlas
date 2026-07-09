@@ -552,6 +552,13 @@ function PhotoPointActivity({
   const choices = useMemo(() => makeAssetChoices(eligibleAssets, round, 4), [eligibleAssets, round])
   const target = choices[0]
   const [selected, setSelected] = useState<AssetItem | null>(null)
+  const [readyToScore, setReadyToScore] = useState(false)
+
+  function advanceRound() {
+    setRound((currentRound) => currentRound + 1)
+    setSelected(null)
+    setReadyToScore(false)
+  }
 
   return (
     <section className="activity-screen">
@@ -562,29 +569,33 @@ function PhotoPointActivity({
             className={selected?.id === asset.id ? 'choice-tile selected' : 'choice-tile'}
             key={asset.id}
             type="button"
-            onClick={() => setSelected(asset)}
+            onClick={() => {
+              setSelected(asset)
+              setReadyToScore(true)
+            }}
           >
             <AssetTile asset={asset} />
           </button>
         ))}
       </div>
-      <div className="activity-actions">
-        <button
-          type="button"
-          onClick={() => {
-            setRound((currentRound) => currentRound + 1)
-            setSelected(null)
+      {!readyToScore && (
+        <div className="activity-actions">
+          <button type="button" onClick={() => setReadyToScore(true)}>
+            Score Round
+          </button>
+        </div>
+      )}
+      {readyToScore && (
+        <ScoringPanel
+          activityId="act.photo_point.v1"
+          defaultNotes={selected ? `Selected ${selected.label}.` : 'No image selected.'}
+          skillIds={['vocab.familiar_nouns.v1', 'questions.what_object.v1']}
+          onScore={(input) => {
+            onLogObservation(input)
+            advanceRound()
           }}
-        >
-          Next Set
-        </button>
-      </div>
-      <ScoringPanel
-        activityId="act.photo_point.v1"
-        defaultNotes={selected ? `Selected ${selected.label}.` : 'Photo choice activity.'}
-        skillIds={['vocab.familiar_nouns.v1', 'questions.what_object.v1']}
-        onScore={onLogObservation}
-      />
+        />
+      )}
     </section>
   )
 }
@@ -606,9 +617,15 @@ function PutItSomewhereActivity({
     { object: 'truck', relation: 'in', target: 'box', text: 'Put the truck in the box.' },
   ]
   const [index, setIndex] = useState(0)
+  const [readyToScore, setReadyToScore] = useState(false)
   const currentPrompt = prompts[index]
   const objectAsset = findAssetByLabel(assets, currentPrompt.object)
   const targetAsset = findAssetByLabel(assets, currentPrompt.target)
+
+  function advancePrompt() {
+    setIndex((currentIndex) => (currentIndex + 1) % prompts.length)
+    setReadyToScore(false)
+  }
 
   return (
     <section className="activity-screen">
@@ -618,22 +635,29 @@ function PutItSomewhereActivity({
         <div className="stage-relation">{currentPrompt.relation}</div>
         <StageAssetCard asset={targetAsset} />
       </div>
-      <div className="activity-actions">
-        <button type="button" onClick={() => setIndex((index + 1) % prompts.length)}>
-          Next Prompt
-        </button>
-      </div>
-      <ScoringPanel
-        activityId="act.put_it_somewhere.v1"
-        defaultNotes={currentPrompt.text}
-        evidenceLabel="Real-world transfer"
-        source="real_world"
-        generalization
-        setting="home"
-        material="real_object"
-        skillIds={['concept.prepositions.in_on_under.v1', 'receptive.one_step.v1']}
-        onScore={onLogObservation}
-      />
+      {!readyToScore && (
+        <div className="activity-actions">
+          <button type="button" onClick={() => setReadyToScore(true)}>
+            Score Prompt
+          </button>
+        </div>
+      )}
+      {readyToScore && (
+        <ScoringPanel
+          activityId="act.put_it_somewhere.v1"
+          defaultNotes={currentPrompt.text}
+          evidenceLabel="Real-world transfer"
+          source="real_world"
+          generalization
+          setting="home"
+          material="real_object"
+          skillIds={['concept.prepositions.in_on_under.v1', 'receptive.one_step.v1']}
+          onScore={(input) => {
+            onLogObservation(input)
+            advancePrompt()
+          }}
+        />
+      )}
     </section>
   )
 }
