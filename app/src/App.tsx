@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { AssetReviewPanel } from './AssetReview'
 import { defaultAssets } from './domain/assets'
+import { routeForActivity, type ActivityRoute } from './domain/activityRouting'
 import { mergeReviewState, type AssetReviewState } from './domain/assetReview'
 import {
   initialSourceSettings,
@@ -30,9 +31,18 @@ import {
 import { runSimulationSuite } from './domain/simulations'
 import { useLocalStorageState } from './domain/storage'
 import { useGitHubJsonSync, type SyncedStateStatus } from './domain/syncedStorage'
-import type { AssetItem, AssetSource, LearnerState, ObservationResult, PromptLevel, Recommendation, SkillNode } from './domain/types'
+import type {
+  ActivityTemplate,
+  AssetItem,
+  AssetSource,
+  LearnerState,
+  ObservationResult,
+  PromptLevel,
+  Recommendation,
+  SkillNode,
+} from './domain/types'
 
-type ViewMode = 'dashboard' | 'graph' | 'photo-point' | 'put-it-somewhere' | 'asset-review' | 'simulations'
+type ViewMode = 'dashboard' | 'graph' | ActivityRoute | 'asset-review' | 'simulations'
 type ScoreChoice = 'got_it' | 'with_help' | 'almost' | 'not_yet'
 
 const activityHelpOptions: Array<{ label: string; value: PromptLevel }> = [
@@ -99,6 +109,8 @@ function App() {
     value: appStateDocument,
   })
   const [view, setView] = useState<ViewMode>('dashboard')
+  const [activeActivityId, setActiveActivityId] = useState('act.photo_point.v1')
+  const activeActivity = useMemo(() => activityById(activeActivityId) ?? activityById('act.photo_point.v1')!, [activeActivityId])
   const recommendations = useMemo(() => recommendNextActivities(content, learner, 6), [learner])
   const simulations = useMemo(() => runSimulationSuite(content), [])
   const coverage = useMemo(() => domainCoverage(content, learner.skill_states), [learner])
@@ -124,7 +136,14 @@ function App() {
   function resetDemo() {
     setLearner(createDemoLearner(content))
     setAssets(defaultAssets)
+    setActiveActivityId('act.photo_point.v1')
     setView('dashboard')
+  }
+
+  function startActivity(activityId: string) {
+    const activity = activityById(activityId)
+    setActiveActivityId(activityId)
+    setView(routeForActivity(activity))
   }
 
   function applyAppStateDocument(document: AppStateDocument) {
@@ -171,14 +190,14 @@ function App() {
           <button
             className={view === 'photo-point' ? 'active' : ''}
             type="button"
-            onClick={() => setView('photo-point')}
+            onClick={() => startActivity('act.photo_point.v1')}
           >
             Photo Point
           </button>
           <button
             className={view === 'put-it-somewhere' ? 'active' : ''}
             type="button"
-            onClick={() => setView('put-it-somewhere')}
+            onClick={() => startActivity('act.put_it_somewhere.v1')}
           >
             Put It
           </button>
@@ -213,20 +232,82 @@ function App() {
           onPullSharedState={pullSharedState}
           onPushSharedState={pushSharedState}
           onResetDemo={resetDemo}
-          onStartActivity={(activityId) => {
-            setView(activityId === 'act.put_it_somewhere.v1' ? 'put-it-somewhere' : 'photo-point')
-          }}
+          onStartActivity={startActivity}
         />
       )}
 
       {view === 'graph' && <GraphPanel learner={learner} recommendations={recommendations} />}
 
       {view === 'photo-point' && (
-        <PhotoPointActivity assets={activeAssets} onBack={() => setView('dashboard')} onLogObservation={logObservation} />
+        <PhotoPointActivity
+          activity={activeActivity}
+          assets={activeAssets}
+          onBack={() => setView('dashboard')}
+          onLogObservation={logObservation}
+        />
+      )}
+
+      {view === 'action-match' && (
+        <ActionMatchActivity
+          activity={activeActivity}
+          assets={activeAssets}
+          onBack={() => setView('dashboard')}
+          onLogObservation={logObservation}
+        />
+      )}
+
+      {view === 'category-baskets' && (
+        <CategoryBasketsActivity
+          activity={activeActivity}
+          assets={activeAssets}
+          onBack={() => setView('dashboard')}
+          onLogObservation={logObservation}
+        />
+      )}
+
+      {view === 'feature-find' && (
+        <FeatureFindActivity
+          activity={activeActivity}
+          assets={activeAssets}
+          onBack={() => setView('dashboard')}
+          onLogObservation={logObservation}
+        />
+      )}
+
+      {view === 'question-picnic' && (
+        <QuestionPicnicActivity
+          activity={activeActivity}
+          assets={activeAssets}
+          onBack={() => setView('dashboard')}
+          onLogObservation={logObservation}
+        />
       )}
 
       {view === 'put-it-somewhere' && (
-        <PutItSomewhereActivity assets={activeAssets} onBack={() => setView('dashboard')} onLogObservation={logObservation} />
+        <PutItSomewhereActivity
+          activity={activeActivity}
+          assets={activeAssets}
+          onBack={() => setView('dashboard')}
+          onLogObservation={logObservation}
+        />
+      )}
+
+      {view === 'story-snaps' && (
+        <StorySnapsActivity
+          activity={activeActivity}
+          assets={activeAssets}
+          onBack={() => setView('dashboard')}
+          onLogObservation={logObservation}
+        />
+      )}
+
+      {view === 'parent-led' && (
+        <ParentLedActivity
+          activity={activeActivity}
+          assets={activeAssets}
+          onBack={() => setView('dashboard')}
+          onLogObservation={logObservation}
+        />
       )}
 
       {view === 'asset-review' && (
@@ -539,76 +620,128 @@ function QuickLogPanel({
 }
 
 function PhotoPointActivity({
+  activity,
   assets,
   onBack,
   onLogObservation,
-}: {
-  assets: AssetItem[]
-  onBack: () => void
-  onLogObservation: (input: ObservationInput) => void
-}) {
-  const eligibleAssets = useMemo(() => assets.filter((asset) => isEligibleFor(asset, 'photo_point')), [assets])
+}: ActivityComponentProps) {
+  const eligibleAssets = useMemo(() => assetsForEligibility(assets, 'photo_point'), [assets])
   const [round, setRound] = useState(0)
-  const choices = useMemo(() => makeAssetChoices(eligibleAssets, round, 4), [eligibleAssets, round])
-  const target = choices[0]
-  const [selected, setSelected] = useState<AssetItem | null>(null)
-  const [readyToScore, setReadyToScore] = useState(false)
-
-  function advanceRound() {
-    setRound((currentRound) => currentRound + 1)
-    setSelected(null)
-    setReadyToScore(false)
-  }
+  const target = eligibleAssets[round % eligibleAssets.length]
+  const choices = useMemo(() => makeChoiceSetWithTarget(eligibleAssets, target, round, 4), [eligibleAssets, round, target])
 
   return (
-    <section className="activity-screen">
-      <ActivityHeader title="Photo Point" prompt={`Where is the ${target.label}?`} onBack={onBack} />
-      <div className="choice-grid">
-        {choices.map((asset) => (
-          <button
-            className={selected?.id === asset.id ? 'choice-tile selected' : 'choice-tile'}
-            key={asset.id}
-            type="button"
-            onClick={() => {
-              setSelected(asset)
-              setReadyToScore(true)
-            }}
-          >
-            <AssetTile asset={asset} />
-          </button>
-        ))}
-      </div>
-      {!readyToScore && (
-        <div className="activity-actions">
-          <button type="button" onClick={() => setReadyToScore(true)}>
-            Score Round
-          </button>
-        </div>
-      )}
-      {readyToScore && (
-        <ScoringPanel
-          activityId="act.photo_point.v1"
-          defaultNotes={selected ? `Selected ${selected.label}.` : 'No image selected.'}
-          skillIds={['vocab.familiar_nouns.v1', 'questions.what_object.v1']}
-          onScore={(input) => {
-            onLogObservation(input)
-            advanceRound()
-          }}
-        />
-      )}
-    </section>
+    <ScoredChoiceActivity
+      activity={activity}
+      choices={choices}
+      noteForSelection={(selected) => (selected ? `Selected ${selected.label}; target was ${target.label}.` : 'No image selected.')}
+      onAdvance={() => setRound((currentRound) => currentRound + 1)}
+      onBack={onBack}
+      onLogObservation={onLogObservation}
+      prompt={`Where is the ${target.label}?`}
+      scoreButtonLabel="Score Round"
+      skillIds={activitySkillIds(activity, ['vocab.familiar_nouns.v1', 'questions.what_object.v1'])}
+    />
+  )
+}
+
+function ActionMatchActivity({
+  activity,
+  assets,
+  onBack,
+  onLogObservation,
+}: ActivityComponentProps) {
+  const actionAssets = useMemo(() => assetsForEligibility(assets, 'action_label'), [assets])
+  const [round, setRound] = useState(0)
+  const target = actionAssets[round % actionAssets.length]
+  const choices = useMemo(() => makeChoiceSetWithTarget(actionAssets, target, round, 4), [actionAssets, round, target])
+
+  return (
+    <ScoredChoiceActivity
+      activity={activity}
+      choices={choices}
+      noteForSelection={(selected) =>
+        selected ? `Selected ${selected.label}; target action was ${target.label}.` : `No action selected; target was ${target.label}.`
+      }
+      onAdvance={() => setRound((currentRound) => currentRound + 1)}
+      onBack={onBack}
+      onLogObservation={onLogObservation}
+      prompt={`Which picture shows ${target.label}?`}
+      scoreButtonLabel="Score Action"
+      skillIds={activitySkillIds(activity, ['vocab.verbs.common_actions.v1', 'questions.what_action.v1'])}
+    />
+  )
+}
+
+function CategoryBasketsActivity({
+  activity,
+  assets,
+  onBack,
+  onLogObservation,
+}: ActivityComponentProps) {
+  const [round, setRound] = useState(0)
+  const category = categoryPrompts[round % categoryPrompts.length]
+  const targetPool = assetsForCategory(assets, category.key)
+  const target = targetPool[Math.floor(round / categoryPrompts.length) % targetPool.length]
+  const distractors = assetsForCategoryDistractors(assets, category.key)
+  const choices = useMemo(() => makeChoiceSetWithTarget([target, ...distractors], target, round, 4), [distractors, round, target])
+
+  return (
+    <ScoredChoiceActivity
+      activity={activity}
+      choices={choices}
+      noteForSelection={(selected) =>
+        selected
+          ? `Selected ${selected.label}; target category was ${category.label}.`
+          : `No category choice selected; target category was ${category.label}.`
+      }
+      onAdvance={() => setRound((currentRound) => currentRound + 1)}
+      onBack={onBack}
+      onLogObservation={onLogObservation}
+      prompt={`Which one is ${category.promptLabel}?`}
+      scoreButtonLabel="Score Category"
+      skillIds={activitySkillIds(activity, ['concept.categories.basic.v1', 'vocab.familiar_nouns.v1', 'questions.which_choice.v1'])}
+    />
+  )
+}
+
+function FeatureFindActivity({
+  activity,
+  assets,
+  onBack,
+  onLogObservation,
+}: ActivityComponentProps) {
+  const [round, setRound] = useState(0)
+  const feature = featurePrompts[round % featurePrompts.length]
+  const targetPool = assets.filter(feature.matches)
+  const fallbackPool = targetPool.length ? targetPool : assetsForCategory(assets, 'familiar_object')
+  const target = fallbackPool[Math.floor(round / featurePrompts.length) % fallbackPool.length]
+  const distractors = assets.filter((asset) => asset.id !== target.id && !feature.matches(asset))
+  const choices = useMemo(() => makeChoiceSetWithTarget([target, ...distractors], target, round, 4), [distractors, round, target])
+
+  return (
+    <ScoredChoiceActivity
+      activity={activity}
+      choices={choices}
+      noteForSelection={(selected) =>
+        selected ? `Selected ${selected.label}; feature prompt was ${feature.note}.` : `No feature choice selected; prompt was ${feature.note}.`
+      }
+      onAdvance={() => setRound((currentRound) => currentRound + 1)}
+      onBack={onBack}
+      onLogObservation={onLogObservation}
+      prompt={feature.prompt}
+      scoreButtonLabel="Score Feature"
+      skillIds={activitySkillIds(activity, ['concept.attributes.basic.v1', 'questions.which_choice.v1'])}
+    />
   )
 }
 
 function PutItSomewhereActivity({
+  activity,
   assets,
   onBack,
   onLogObservation,
-}: {
-  assets: AssetItem[]
-  onBack: () => void
-  onLogObservation: (input: ObservationInput) => void
-}) {
+}: ActivityComponentProps) {
   const prompts = [
     { object: 'bear', relation: 'in', target: 'box', text: 'Put the bear in the box.' },
     { object: 'cup', relation: 'on', target: 'table', text: 'Put the cup on the table.' },
@@ -629,7 +762,7 @@ function PutItSomewhereActivity({
 
   return (
     <section className="activity-screen">
-      <ActivityHeader title="Put It Somewhere" prompt={currentPrompt.text} onBack={onBack} />
+      <ActivityHeader title={activity.title} prompt={currentPrompt.text} onBack={onBack} />
       <div className="object-stage" aria-label="Parent-led real-object prompt">
         <StageAssetCard asset={objectAsset} />
         <div className="stage-relation">{currentPrompt.relation}</div>
@@ -644,18 +777,274 @@ function PutItSomewhereActivity({
       )}
       {readyToScore && (
         <ScoringPanel
-          activityId="act.put_it_somewhere.v1"
+          activityId={activity.id}
           defaultNotes={currentPrompt.text}
           evidenceLabel="Real-world transfer"
           source="real_world"
           generalization
           setting="home"
           material="real_object"
-          skillIds={['concept.prepositions.in_on_under.v1', 'receptive.one_step.v1']}
+          skillIds={activitySkillIds(activity, ['concept.prepositions.in_on_under.v1', 'receptive.one_step.v1'])}
           onScore={(input) => {
             onLogObservation(input)
             advancePrompt()
           }}
+        />
+      )}
+    </section>
+  )
+}
+
+function QuestionPicnicActivity({
+  activity,
+  assets,
+  onBack,
+  onLogObservation,
+}: ActivityComponentProps) {
+  const [round, setRound] = useState(0)
+  const prompt = makeQuestionPrompt(assets, round)
+
+  return (
+    <PromptObservationActivity
+      activity={activity}
+      asset={prompt.asset}
+      evidenceLabel={prompt.evidenceLabel}
+      generalization={prompt.generalization}
+      material={prompt.material}
+      note={prompt.note}
+      onAdvance={() => setRound((currentRound) => currentRound + 1)}
+      onBack={onBack}
+      onLogObservation={onLogObservation}
+      prompt={prompt.text}
+      scoreButtonLabel="Score Question"
+      setting={prompt.setting}
+      skillIds={activitySkillIds(activity, ['questions.where.v1', 'questions.who.v1', 'questions.what_action.v1'])}
+      source={prompt.source}
+      supportingText={prompt.supportingText}
+    />
+  )
+}
+
+function StorySnapsActivity({
+  activity,
+  assets,
+  onBack,
+  onLogObservation,
+}: ActivityComponentProps) {
+  const storyAssets = useMemo(() => {
+    const actionAssets = assetsForEligibility(assets, 'action_label')
+    return actionAssets.length ? actionAssets : assetsForEligibility(assets, 'photo_point')
+  }, [assets])
+  const [round, setRound] = useState(0)
+  const asset = storyAssets[round % storyAssets.length]
+
+  return (
+    <PromptObservationActivity
+      activity={activity}
+      asset={asset}
+      evidenceLabel="Photo talk"
+      generalization={false}
+      material="own_photo"
+      note={`Story snap with ${asset.label}.`}
+      onAdvance={() => setRound((currentRound) => currentRound + 1)}
+      onBack={onBack}
+      onLogObservation={onLogObservation}
+      prompt={`What happened? ${asset.label}.`}
+      scoreButtonLabel="Score Story"
+      setting="app"
+      skillIds={activitySkillIds(activity, ['narrative.picture_event_seed.v1', 'vocab.verbs.common_actions.v1'])}
+      source="app_probe"
+      supportingText="Who? What happened? Where?"
+    />
+  )
+}
+
+function ParentLedActivity({
+  activity,
+  assets,
+  onBack,
+  onLogObservation,
+}: ActivityComponentProps) {
+  const [round, setRound] = useState(0)
+  const prompt = makeParentLedActivityPrompt(activity, assets, round)
+
+  return (
+    <PromptObservationActivity
+      activity={activity}
+      asset={prompt.asset}
+      evidenceLabel={prompt.evidenceLabel}
+      generalization={prompt.generalization}
+      material={prompt.material}
+      note={prompt.note}
+      onAdvance={() => setRound((currentRound) => currentRound + 1)}
+      onBack={onBack}
+      onLogObservation={onLogObservation}
+      prompt={prompt.text}
+      scoreButtonLabel={prompt.scoreButtonLabel}
+      setting={prompt.setting}
+      skillIds={activitySkillIds(activity, [])}
+      source={prompt.source}
+      supportingText={prompt.supportingText}
+    />
+  )
+}
+
+interface ActivityComponentProps {
+  activity: ActivityTemplate
+  assets: AssetItem[]
+  onBack: () => void
+  onLogObservation: (input: ObservationInput) => void
+}
+
+function ScoredChoiceActivity({
+  activity,
+  choices,
+  evidenceLabel = 'App evidence',
+  generalization = false,
+  material = 'own_photo',
+  noteForSelection,
+  onAdvance,
+  onBack,
+  onLogObservation,
+  prompt,
+  scoreButtonLabel,
+  setting = 'app',
+  skillIds,
+  source = 'app_probe',
+}: {
+  activity: ActivityTemplate
+  choices: AssetItem[]
+  evidenceLabel?: string
+  generalization?: boolean
+  material?: string
+  noteForSelection: (selected: AssetItem | null) => string
+  onAdvance: () => void
+  onBack: () => void
+  onLogObservation: (input: ObservationInput) => void
+  prompt: string
+  scoreButtonLabel: string
+  setting?: string
+  skillIds: string[]
+  source?: ObservationInput['source']
+}) {
+  const [selected, setSelected] = useState<AssetItem | null>(null)
+  const [readyToScore, setReadyToScore] = useState(false)
+
+  function scoreAndAdvance(input: ObservationInput) {
+    onLogObservation(input)
+    setSelected(null)
+    setReadyToScore(false)
+    onAdvance()
+  }
+
+  return (
+    <section className="activity-screen">
+      <ActivityHeader title={activity.title} prompt={prompt} onBack={onBack} />
+      <div className="choice-grid">
+        {choices.map((asset) => (
+          <button
+            className={selected?.id === asset.id ? 'choice-tile selected' : 'choice-tile'}
+            key={asset.id}
+            type="button"
+            onClick={() => {
+              setSelected(asset)
+              setReadyToScore(true)
+            }}
+          >
+            <AssetTile asset={asset} />
+          </button>
+        ))}
+      </div>
+      {!readyToScore && (
+        <div className="activity-actions">
+          <button type="button" onClick={() => setReadyToScore(true)}>
+            {scoreButtonLabel}
+          </button>
+        </div>
+      )}
+      {readyToScore && (
+        <ScoringPanel
+          activityId={activity.id}
+          defaultNotes={noteForSelection(selected)}
+          evidenceLabel={evidenceLabel}
+          generalization={generalization}
+          material={material}
+          setting={setting}
+          skillIds={skillIds}
+          source={source}
+          onScore={scoreAndAdvance}
+        />
+      )}
+    </section>
+  )
+}
+
+function PromptObservationActivity({
+  activity,
+  asset,
+  evidenceLabel,
+  generalization,
+  material,
+  note,
+  onAdvance,
+  onBack,
+  onLogObservation,
+  prompt,
+  scoreButtonLabel,
+  setting,
+  skillIds,
+  source,
+  supportingText,
+}: {
+  activity: ActivityTemplate
+  asset?: AssetItem
+  evidenceLabel: string
+  generalization: boolean
+  material: string
+  note: string
+  onAdvance: () => void
+  onBack: () => void
+  onLogObservation: (input: ObservationInput) => void
+  prompt: string
+  scoreButtonLabel: string
+  setting: string
+  skillIds: string[]
+  source: ObservationInput['source']
+  supportingText: string
+}) {
+  const [readyToScore, setReadyToScore] = useState(false)
+
+  function scoreAndAdvance(input: ObservationInput) {
+    onLogObservation(input)
+    setReadyToScore(false)
+    onAdvance()
+  }
+
+  return (
+    <section className="activity-screen">
+      <ActivityHeader title={activity.title} prompt={prompt} onBack={onBack} />
+      <div className="prompt-stage">
+        {asset && <StageAssetCard asset={asset} />}
+        <p>{supportingText}</p>
+      </div>
+      {!readyToScore && (
+        <div className="activity-actions">
+          <button type="button" onClick={() => setReadyToScore(true)}>
+            {scoreButtonLabel}
+          </button>
+        </div>
+      )}
+      {readyToScore && (
+        <ScoringPanel
+          activityId={activity.id}
+          defaultNotes={note}
+          evidenceLabel={evidenceLabel}
+          generalization={generalization}
+          material={material}
+          setting={setting}
+          skillIds={skillIds}
+          source={source}
+          onScore={scoreAndAdvance}
         />
       )}
     </section>
@@ -1141,16 +1530,228 @@ function isEligibleFor(asset: AssetItem, activityId: string): boolean {
   return asset.activityEligibility?.includes(activityId) ?? true
 }
 
-function makeAssetChoices(assets: AssetItem[], round: number, size: number): AssetItem[] {
-  if (assets.length <= size) return assets
-  const start = (round * size) % assets.length
-  return Array.from({ length: size }, (_, offset) => assets[(start + offset) % assets.length])
+function activityById(activityId: string): ActivityTemplate | undefined {
+  return content.activities.find((activity) => activity.id === activityId)
+}
+
+function activitySkillIds(activity: ActivityTemplate, fallback: string[]): string[] {
+  const ids = [...(activity.target_skill_ids.primary ?? []), ...(activity.target_skill_ids.secondary ?? [])]
+  return ids.length ? ids : fallback
+}
+
+function assetsForEligibility(assets: AssetItem[], activityId: string): AssetItem[] {
+  const eligible = assets.filter((asset) => isEligibleFor(asset, activityId))
+  if (eligible.length) return eligible
+  const defaultEligible = defaultAssets.filter((asset) => isEligibleFor(asset, activityId))
+  return defaultEligible.length ? defaultEligible : defaultAssets
+}
+
+function makeChoiceSetWithTarget(assets: Array<AssetItem | undefined>, target: AssetItem | undefined, round: number, size: number): AssetItem[] {
+  const uniqueAssets = uniqueAssetList(assets)
+  const safeTarget = target ?? uniqueAssets[0] ?? defaultAssets[0]
+  const distractors = uniqueAssetList([...uniqueAssets, ...defaultAssets]).filter((asset) => asset.id !== safeTarget.id)
+  const selected = [safeTarget]
+  for (let index = 0; selected.length < size && index < distractors.length; index += 1) {
+    selected.push(distractors[(round + index) % distractors.length])
+  }
+  return rotateList(selected, round)
+}
+
+function uniqueAssetList(assets: Array<AssetItem | undefined>): AssetItem[] {
+  const seen = new Set<string>()
+  const unique: AssetItem[] = []
+  for (const asset of assets) {
+    if (!asset || seen.has(asset.id)) continue
+    seen.add(asset.id)
+    unique.push(asset)
+  }
+  return unique
+}
+
+function rotateList<T>(items: T[], round: number): T[] {
+  if (items.length === 0) return items
+  const offset = round % items.length
+  return [...items.slice(offset), ...items.slice(0, offset)]
+}
+
+function assetHasTagOrCategory(asset: AssetItem, value: string): boolean {
+  return asset.tags.includes(value) || (asset.categories ?? []).includes(value)
+}
+
+function assetsForCategory(assets: AssetItem[], category: string): AssetItem[] {
+  const matches = assets.filter((asset) => assetHasTagOrCategory(asset, category))
+  if (matches.length) return matches
+  const defaultMatches = defaultAssets.filter((asset) => assetHasTagOrCategory(asset, category))
+  return defaultMatches.length ? defaultMatches : defaultAssets
+}
+
+function assetsForCategoryDistractors(assets: AssetItem[], category: string): AssetItem[] {
+  const distractors = assets.filter((asset) => !assetHasTagOrCategory(asset, category))
+  return distractors.length ? distractors : defaultAssets.filter((asset) => !assetHasTagOrCategory(asset, category))
 }
 
 function findAssetByLabel(assets: AssetItem[], label: string): AssetItem {
   const asset = assets.find((candidate) => candidate.label === label) ?? defaultAssets.find((candidate) => candidate.label === label)
   if (!asset) throw new Error(`Missing asset for label: ${label}`)
   return asset
+}
+
+const categoryPrompts = [
+  { key: 'food', label: 'food', promptLabel: 'food' },
+  { key: 'animal', label: 'animal', promptLabel: 'an animal' },
+  { key: 'clothing', label: 'clothing', promptLabel: 'something you wear' },
+  { key: 'toy', label: 'toy', promptLabel: 'a toy' },
+  { key: 'vehicle', label: 'vehicle', promptLabel: 'a vehicle' },
+]
+
+const featurePrompts = [
+  {
+    note: 'something you eat',
+    prompt: 'Which one can you eat?',
+    matches: (asset: AssetItem) => assetHasTagOrCategory(asset, 'food'),
+  },
+  {
+    note: 'something you wear',
+    prompt: 'Which one can you wear?',
+    matches: (asset: AssetItem) => assetHasTagOrCategory(asset, 'clothing'),
+  },
+  {
+    note: 'something that goes',
+    prompt: 'Which one can go?',
+    matches: (asset: AssetItem) => assetHasTagOrCategory(asset, 'vehicle'),
+  },
+  {
+    note: 'something for sitting or sleeping',
+    prompt: 'Which one is furniture?',
+    matches: (asset: AssetItem) => assetHasTagOrCategory(asset, 'furniture'),
+  },
+  {
+    note: 'something for drinking',
+    prompt: 'Which one is for drinking?',
+    matches: (asset: AssetItem) => asset.tags.includes('drink'),
+  },
+]
+
+function makeQuestionPrompt(assets: AssetItem[], round: number): ActivityPrompt {
+  const nouns = assetsForEligibility(assets, 'photo_point').filter((asset) => !assetHasTagOrCategory(asset, 'action'))
+  const actions = assetsForEligibility(assets, 'action_label')
+  const noun = nouns[round % nouns.length] ?? defaultAssets[0]
+  const action = actions[round % actions.length] ?? noun
+  const prompts: ActivityPrompt[] = [
+    {
+      asset: noun,
+      evidenceLabel: 'Question prompt',
+      generalization: false,
+      material: 'own_photo',
+      note: `Asked what-object question with ${noun.label}.`,
+      setting: 'app',
+      source: 'app_probe',
+      supportingText: 'Accept a point, tap, word, or clear look.',
+      text: `What is this? ${noun.label}.`,
+    },
+    {
+      asset: action,
+      evidenceLabel: 'Action question',
+      generalization: false,
+      material: 'own_photo',
+      note: `Asked what-action question with ${action.label}.`,
+      setting: 'app',
+      source: 'app_probe',
+      supportingText: 'Accept pointing, imitation, a word, or a short phrase.',
+      text: `What is happening? ${action.label}.`,
+    },
+    {
+      asset: noun,
+      evidenceLabel: 'Real-world transfer',
+      generalization: true,
+      material: 'real_object',
+      note: `Asked where-question with real ${noun.label}.`,
+      setting: 'home',
+      source: 'real_world',
+      supportingText: 'Use a real object nearby when possible.',
+      text: `Where is the ${noun.label}?`,
+    },
+  ]
+  return prompts[round % prompts.length]
+}
+
+function makeParentLedActivityPrompt(activity: ActivityTemplate, assets: AssetItem[], round: number): ActivityPrompt & { scoreButtonLabel: string } {
+  const nounAssets = assetsForEligibility(assets, 'photo_point').filter((asset) => !assetHasTagOrCategory(asset, 'action'))
+  const noun = nounAssets[round % nounAssets.length] ?? defaultAssets[0]
+  const category = categoryPrompts[round % categoryPrompts.length]
+  const promptById: Record<string, ActivityPrompt & { scoreButtonLabel: string }> = {
+    'act.print_spotting.v1': {
+      evidenceLabel: 'Real-world transfer',
+      generalization: true,
+      material: 'book_or_sign',
+      note: 'Looked for familiar print in a book, label, or sign.',
+      scoreButtonLabel: 'Score Print',
+      setting: 'home',
+      source: 'real_world',
+      supportingText: 'Use a book, package, sign, or shirt logo.',
+      text: 'Find some print together.',
+    },
+    'act.silly_mix_up.v1': {
+      asset: noun,
+      evidenceLabel: 'Real-world transfer',
+      generalization: true,
+      material: 'real_object',
+      note: `Silly category check with ${noun.label} and ${category.label}.`,
+      scoreButtonLabel: 'Score Mix-Up',
+      setting: 'home',
+      source: 'real_world',
+      supportingText: 'Let him correct you by pointing, saying no, or choosing.',
+      text: `Is the ${noun.label} ${category.promptLabel}?`,
+    },
+    'act.sound_play_parade.v1': {
+      evidenceLabel: 'Real-world transfer',
+      generalization: true,
+      material: 'voice_song',
+      note: 'Played with rhyme, syllables, or environmental sounds.',
+      scoreButtonLabel: 'Score Sound Play',
+      setting: 'home',
+      source: 'real_world',
+      supportingText: 'Use a song, rhyme, clap pattern, or sound effect.',
+      text: 'Play a sound game together.',
+    },
+    'act.tiny_treasure_hunt.v1': {
+      asset: noun,
+      evidenceLabel: 'Real-world transfer',
+      generalization: true,
+      material: 'real_object',
+      note: `Tiny treasure hunt for ${noun.label}.`,
+      scoreButtonLabel: 'Score Hunt',
+      setting: 'home',
+      source: 'real_world',
+      supportingText: 'Use the real object when possible.',
+      text: `Find the ${noun.label}.`,
+    },
+    'act.why_because_seed.v1': {
+      evidenceLabel: 'Real-world transfer',
+      generalization: true,
+      material: 'routine',
+      note: 'Asked a why/because question during a routine.',
+      scoreButtonLabel: 'Score Why',
+      setting: 'home',
+      source: 'real_world',
+      supportingText: 'A gesture, single word, or parent-supported because phrase counts.',
+      text: 'Why did that happen?',
+    },
+  }
+  return (
+    promptById[activity.id] ?? {
+      asset: noun,
+      evidenceLabel: 'Real-world transfer',
+      generalization: true,
+      material: 'real_object',
+      note: `${activity.title} parent-led prompt with ${noun.label}.`,
+      scoreButtonLabel: 'Score Prompt',
+      setting: 'home',
+      source: 'real_world',
+      supportingText: 'Use this as a quick parent observation.',
+      text: activity.title,
+    }
+  )
 }
 
 function StageAssetCard({ asset }: { asset: AssetItem }) {
@@ -1194,6 +1795,18 @@ interface ObservationInput {
   notes: string
   setting?: string
   material?: string
+}
+
+interface ActivityPrompt {
+  asset?: AssetItem
+  evidenceLabel: string
+  generalization: boolean
+  material: string
+  note: string
+  setting: string
+  source: ObservationInput['source']
+  supportingText: string
+  text: string
 }
 
 function formatLabel(value: string): string {

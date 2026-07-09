@@ -508,6 +508,29 @@ input {
   margin-bottom: 16px;
 }
 
+.prompt-stage {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d8d3c8;
+  border-radius: 8px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 0 auto 16px;
+  max-width: 760px;
+  min-height: 230px;
+  padding: 18px;
+}
+
+.prompt-stage p {
+  color: #35413f;
+  font-size: 22px;
+  font-weight: 850;
+  line-height: 1.2;
+  margin: 0;
+  max-width: 340px;
+}
+
 .stage-object {
   align-items: center;
   background: #f7f4ed;
@@ -1445,6 +1468,13 @@ input {
     gap: 14px;
   }
 
+  .prompt-stage {
+    flex-wrap: wrap;
+    min-height: 200px;
+    padding: 14px;
+    text-align: center;
+  }
+
   .candidate-card {
     align-items: stretch;
     grid-template-columns: 82px minmax(0, 1fr);
@@ -1514,6 +1544,16 @@ input {
   .choice-tile .asset-tile img {
     height: 132px;
     width: 132px;
+  }
+
+  .prompt-stage {
+    gap: 12px;
+    min-height: 188px;
+  }
+
+  .prompt-stage p {
+    font-size: 18px;
+    max-width: 100%;
   }
 
   .dashboard-grid,
