@@ -408,13 +408,5 @@ function activeSourceLabels(settings: AssetCandidateSearchOptions): string[] {
 }
 
 function suggestedCandidateQuery(asset: AssetItem): string {
-  const categoryTerms = new Set([...(asset.categories ?? []), ...asset.tags])
-  const descriptor = categoryTerms.has('animals')
-    ? 'animal photo'
-    : categoryTerms.has('food')
-      ? 'food photo'
-      : categoryTerms.has('vehicles')
-        ? 'vehicle photo'
-        : 'everyday object photo'
-  return `${asset.label} ${descriptor}`
+  return asset.label
 }

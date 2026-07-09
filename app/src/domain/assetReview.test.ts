@@ -13,6 +13,7 @@ import {
   mapPexelsCandidates,
   mapPixabayCandidates,
   mapWikimediaCandidates,
+  normalizeAssetSearchQuery,
   rankAndFilterAssetCandidates,
 } from './assetCandidateProviders'
 
@@ -87,6 +88,12 @@ describe('asset review manifests', () => {
 })
 
 describe('asset candidate provider mapping', () => {
+  it('normalizes descriptive image queries before provider search', () => {
+    expect(normalizeAssetSearchQuery('cup everyday object photo')).toBe('cup')
+    expect(normalizeAssetSearchQuery('dog animal photograph')).toBe('dog')
+    expect(normalizeAssetSearchQuery('red bus vehicle image')).toBe('red bus')
+  })
+
   it('maps Pexels candidates', () => {
     const candidates = mapPexelsCandidates({
       photos: [

@@ -91,16 +91,23 @@ const artifactPattern =
   /\b(ancient|antique|archaeological|artifact|artefact|coin|excavation|fossil|historic|manuscript|museum|neolithic|painting|pottery|relic|ruin|sarcophagus|sculpture|statue|terracotta|vintage)\b/i
 const illustrationPattern = /\b(cartoon|clipart|drawing|icon|illustration|render|svg|vector)\b/i
 const queryStopWords = new Set([
+  'animal',
+  'animals',
   'clear',
   'everyday',
+  'food',
   'image',
   'isolated',
   'modern',
   'object',
   'photo',
   'photograph',
+  'photography',
   'picture',
   'real',
+  'stock',
+  'vehicle',
+  'vehicles',
 ])
 
 export const candidateProviders: AssetCandidateProvider[] = [
@@ -210,6 +217,7 @@ export async function searchPixabay(
 }
 
 export async function searchWikimediaCommons(query: string, limit = 8): Promise<AssetReplacementCandidate[]> {
+  const sourceQuery = normalizeAssetSearchQuery(query)
   const params = new URLSearchParams({
     action: 'query',
     format: 'json',
@@ -217,7 +225,7 @@ export async function searchWikimediaCommons(query: string, limit = 8): Promise<
     generator: 'search',
     gsrnamespace: '6',
     gsrlimit: String(Math.max(limit * 2, 12)),
-    gsrsearch: `${query} CC0 photograph`,
+    gsrsearch: `${sourceQuery} CC0 photograph`,
     iiprop: 'url|extmetadata|mime|size',
     iiurlwidth: '420',
     origin: '*',
@@ -229,11 +237,12 @@ export async function searchWikimediaCommons(query: string, limit = 8): Promise<
 }
 
 export async function searchOpenverse(query: string, limit = 8): Promise<AssetReplacementCandidate[]> {
+  const sourceQuery = normalizeAssetSearchQuery(query)
   const params = new URLSearchParams({
     category: 'photograph',
     license: 'cc0,pdm',
     page_size: String(limit),
-    q: query,
+    q: sourceQuery,
   })
   const response = await fetch(`https://api.openverse.org/v1/images/?${params.toString()}`)
   if (!response.ok) throw new Error(`Openverse search failed: ${response.status}`)
@@ -396,17 +405,23 @@ function queryTerms(query: string): string[] {
 }
 
 function toModernPhotoQuery(query: string): string {
-  const normalized = query.replace(/\s+/g, ' ').trim()
-  if (/\b(photo|photograph|picture|image)\b/i.test(normalized)) return normalized
+  const normalized = normalizeAssetSearchQuery(query)
   return `${normalized} photo`
 }
 
 function toPixabayQuery(query: string): string {
+  return normalizeAssetSearchQuery(query)
+}
+
+export function normalizeAssetSearchQuery(query: string): string {
   const normalized = query
-    .replace(/\b(photo|photograph|picture|image)\b/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return normalized || query.trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter((term) => term && !queryStopWords.has(term))
+    .join(' ')
+  return normalized || query.replace(/\s+/g, ' ').trim()
 }
 
 function titleFromTags(tags: string | undefined): string {
