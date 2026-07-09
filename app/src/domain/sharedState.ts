@@ -1,105 +1,173 @@
-export interface SharedDatabaseSettings {
+export interface GitHubSyncSettings {
+  branch: string
   enabled: boolean
-  namespace: string
-  supabaseAnonKey: string
-  supabaseUrl: string
+  owner: string
+  path: string
+  repo: string
+  token: string
 }
 
-export const sharedDatabaseStorageKey = 'tla.sharedDatabase.v1'
+export const githubSyncStorageKey = 'tla.githubSync.v1'
 
-export const defaultSharedDatabaseSettings: SharedDatabaseSettings = {
-  enabled: Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY),
-  namespace: import.meta.env.VITE_SUPABASE_NAMESPACE ?? 'default',
-  supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '',
-  supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? '',
+export const defaultGitHubSyncSettings: GitHubSyncSettings = {
+  branch: import.meta.env.VITE_GITHUB_SYNC_BRANCH ?? 'main',
+  enabled: Boolean(import.meta.env.VITE_GITHUB_SYNC_TOKEN),
+  owner: import.meta.env.VITE_GITHUB_SYNC_OWNER ?? 'troyshu',
+  path: import.meta.env.VITE_GITHUB_SYNC_PATH ?? 'app-data/state.json',
+  repo: import.meta.env.VITE_GITHUB_SYNC_REPO ?? 'toddler-language-atlas',
+  token: import.meta.env.VITE_GITHUB_SYNC_TOKEN ?? '',
 }
 
-interface SharedStateRow<T> {
-  updated_at?: string
+export interface GitHubContentFile<T> {
+  sha: string
   value: T
 }
 
-export function normalizeSharedDatabaseSettings(
-  input: Partial<SharedDatabaseSettings> | null | undefined,
-): SharedDatabaseSettings {
+interface GitHubContentResponse {
+  content?: string
+  encoding?: string
+  message?: string
+  sha?: string
+  type?: string
+}
+
+interface GitHubUpdateResponse {
+  content?: {
+    sha?: string
+  } | null
+}
+
+export function normalizeGitHubSyncSettings(input: Partial<GitHubSyncSettings> | null | undefined): GitHubSyncSettings {
   return {
-    enabled: typeof input?.enabled === 'boolean' ? input.enabled : defaultSharedDatabaseSettings.enabled,
-    namespace: cleanNamespace(input?.namespace ?? defaultSharedDatabaseSettings.namespace),
-    supabaseAnonKey: typeof input?.supabaseAnonKey === 'string' ? input.supabaseAnonKey : '',
-    supabaseUrl: cleanSupabaseUrl(input?.supabaseUrl ?? ''),
+    branch: cleanInput(input?.branch ?? defaultGitHubSyncSettings.branch),
+    enabled: typeof input?.enabled === 'boolean' ? input.enabled : defaultGitHubSyncSettings.enabled,
+    owner: cleanInput(input?.owner ?? defaultGitHubSyncSettings.owner),
+    path: cleanPath(input?.path ?? defaultGitHubSyncSettings.path),
+    repo: cleanInput(input?.repo ?? defaultGitHubSyncSettings.repo),
+    token: typeof input?.token === 'string' ? input.token.trim() : '',
   }
 }
 
-export function isSharedDatabaseConfigured(settings: SharedDatabaseSettings): boolean {
-  const normalized = normalizeSharedDatabaseSettings(settings)
-  return Boolean(normalized.enabled && normalized.supabaseUrl && normalized.supabaseAnonKey && normalized.namespace)
+export function isGitHubSyncConfigured(settings: GitHubSyncSettings): boolean {
+  const normalized = normalizeGitHubSyncSettings(settings)
+  return Boolean(
+    normalized.enabled &&
+      normalized.owner &&
+      normalized.repo &&
+      normalized.branch &&
+      normalized.path &&
+      normalized.token,
+  )
 }
 
-export function sharedDatabaseFingerprint(settings: SharedDatabaseSettings): string {
-  const normalized = normalizeSharedDatabaseSettings(settings)
+export function githubSyncFingerprint(settings: GitHubSyncSettings): string {
+  const normalized = normalizeGitHubSyncSettings(settings)
   return [
     normalized.enabled ? 'on' : 'off',
-    normalized.namespace,
-    normalized.supabaseUrl,
-    normalized.supabaseAnonKey,
+    normalized.owner,
+    normalized.repo,
+    normalized.branch,
+    normalized.path,
+    normalized.token,
   ].join('|')
 }
 
-export async function loadSharedValue<T>(settings: SharedDatabaseSettings, key: string): Promise<T | null> {
-  const config = normalizeSharedDatabaseSettings(settings)
-  if (!isSharedDatabaseConfigured(config)) return null
+export async function loadGitHubJsonFile<T>(settings: GitHubSyncSettings): Promise<GitHubContentFile<T> | null> {
+  const config = normalizeGitHubSyncSettings(settings)
+  if (!isGitHubSyncConfigured(config)) return null
 
-  const params = new URLSearchParams({
-    key: `eq.${key}`,
-    limit: '1',
-    namespace: `eq.${config.namespace}`,
-    select: 'value,updated_at',
-  })
-  const response = await fetch(`${config.supabaseUrl}/rest/v1/app_state?${params.toString()}`, {
-    headers: supabaseHeaders(config),
+  const params = new URLSearchParams({ ref: config.branch })
+  const response = await fetch(`${githubContentsUrl(config)}?${params.toString()}`, {
+    headers: githubHeaders(config),
   })
 
-  if (!response.ok) throw new Error(`Database load failed for ${key}: ${response.status}`)
-  const rows = (await response.json()) as Array<SharedStateRow<T>>
-  return rows[0]?.value ?? null
-}
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error(`GitHub load failed: ${response.status}`)
 
-export async function saveSharedValue<T>(settings: SharedDatabaseSettings, key: string, value: T): Promise<void> {
-  const config = normalizeSharedDatabaseSettings(settings)
-  if (!isSharedDatabaseConfigured(config)) return
+  const payload = (await response.json()) as GitHubContentResponse
+  if (payload.type !== 'file' || payload.encoding !== 'base64' || !payload.content || !payload.sha) {
+    throw new Error('GitHub state file is not a base64 JSON file.')
+  }
 
-  const params = new URLSearchParams({
-    on_conflict: 'namespace,key',
-  })
-  const response = await fetch(`${config.supabaseUrl}/rest/v1/app_state?${params.toString()}`, {
-    body: JSON.stringify({
-      key,
-      namespace: config.namespace,
-      updated_at: new Date().toISOString(),
-      value,
-    }),
-    headers: {
-      ...supabaseHeaders(config),
-      'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates,return=minimal',
-    },
-    method: 'POST',
-  })
-
-  if (!response.ok) throw new Error(`Database save failed for ${key}: ${response.status}`)
-}
-
-function supabaseHeaders(settings: SharedDatabaseSettings): Record<string, string> {
   return {
-    apikey: settings.supabaseAnonKey,
-    Authorization: `Bearer ${settings.supabaseAnonKey}`,
+    sha: payload.sha,
+    value: JSON.parse(decodeBase64(payload.content)) as T,
   }
 }
 
-function cleanSupabaseUrl(value: string): string {
-  return value.trim().replace(/\/+$/, '')
+export async function saveGitHubJsonFile<T>(
+  settings: GitHubSyncSettings,
+  value: T,
+  sha?: string,
+): Promise<string> {
+  const config = normalizeGitHubSyncSettings(settings)
+  if (!isGitHubSyncConfigured(config)) throw new Error('GitHub sync is not configured.')
+
+  const response = await fetch(githubContentsUrl(config), {
+    body: JSON.stringify({
+      branch: config.branch,
+      content: encodeBase64(`${JSON.stringify(value, null, 2)}\n`),
+      message: `Update Toddler Language Atlas state ${new Date().toISOString()}`,
+      sha,
+    }),
+    headers: {
+      ...githubHeaders(config),
+      'Content-Type': 'application/json',
+    },
+    method: 'PUT',
+  })
+
+  if (response.status === 409) throw new Error('GitHub save conflict. Pull latest, then try again.')
+  if (!response.ok) throw new Error(`GitHub save failed: ${response.status}`)
+
+  const payload = (await response.json()) as GitHubUpdateResponse
+  const nextSha = payload.content?.sha
+  if (!nextSha) throw new Error('GitHub save did not return a file SHA.')
+  return nextSha
 }
 
-function cleanNamespace(value: string): string {
-  return value.trim() || 'default'
+function githubContentsUrl(settings: GitHubSyncSettings): string {
+  return `https://api.github.com/repos/${encodeURIComponent(settings.owner)}/${encodeURIComponent(
+    settings.repo,
+  )}/contents/${encodePath(settings.path)}`
+}
+
+function githubHeaders(settings: GitHubSyncSettings): Record<string, string> {
+  return {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${settings.token}`,
+    'X-GitHub-Api-Version': '2026-03-10',
+  }
+}
+
+function encodePath(path: string): string {
+  return path.split('/').map(encodeURIComponent).join('/')
+}
+
+function cleanInput(value: string): string {
+  return value.trim()
+}
+
+function cleanPath(value: string): string {
+  return value
+    .trim()
+    .replace(/^\/+/, '')
+    .replace(/\/+$/, '')
+    .replace(/\/{2,}/g, '/')
+}
+
+function encodeBase64(value: string): string {
+  const bytes = new TextEncoder().encode(value)
+  let binary = ''
+  const chunkSize = 0x8000
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.slice(index, index + chunkSize))
+  }
+  return btoa(binary)
+}
+
+function decodeBase64(value: string): string {
+  const binary = atob(value.replace(/\s+/g, ''))
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+  return new TextDecoder().decode(bytes)
 }

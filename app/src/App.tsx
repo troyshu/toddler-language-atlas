@@ -22,14 +22,14 @@ import {
 import { createDemoLearner, learnerFromSimulation, makeObservation, recordObservation } from './domain/mastery'
 import { recommendNextActivities } from './domain/recommendations'
 import {
-  defaultSharedDatabaseSettings,
-  normalizeSharedDatabaseSettings,
-  sharedDatabaseStorageKey,
-  type SharedDatabaseSettings,
+  defaultGitHubSyncSettings,
+  githubSyncStorageKey,
+  normalizeGitHubSyncSettings,
+  type GitHubSyncSettings,
 } from './domain/sharedState'
 import { runSimulationSuite } from './domain/simulations'
 import { useLocalStorageState } from './domain/storage'
-import { useSyncedLocalStorageState, type SyncedStateStatus } from './domain/syncedStorage'
+import { useGitHubJsonSync, type SyncedStateStatus } from './domain/syncedStorage'
 import type { AssetItem, AssetSource, LearnerState, ObservationResult, PromptLevel, Recommendation, SkillNode } from './domain/types'
 
 type ViewMode = 'dashboard' | 'graph' | 'photo-point' | 'put-it-somewhere' | 'asset-review' | 'simulations'
@@ -55,36 +55,53 @@ const storageKey = 'tla.mvp.learner.v1'
 const assetStorageKey = 'tla.mvp.assets.v2'
 const reviewStorageKey = 'tla.assetReview.v1'
 
+interface AppStateDocument {
+  assetReview: AssetReviewState
+  assets: AssetItem[]
+  imageSourceSettings: ImageSourceSettings
+  learner: LearnerState
+  project: 'Toddler Language Atlas'
+  schemaVersion: 'tla-github-state.v1'
+}
+
 function App() {
   const initialLearner = useMemo(() => createDemoLearner(content), [])
   const initialReviewState = useMemo(() => mergeReviewState(defaultAssets, undefined), [])
-  const [savedDatabaseSettings, setSavedDatabaseSettings] = useLocalStorageState<SharedDatabaseSettings>(
-    sharedDatabaseStorageKey,
-    defaultSharedDatabaseSettings,
+  const [savedGitHubSettings, setSavedGitHubSettings] = useLocalStorageState<GitHubSyncSettings>(
+    githubSyncStorageKey,
+    defaultGitHubSyncSettings,
   )
-  const databaseSettings = useMemo(() => normalizeSharedDatabaseSettings(savedDatabaseSettings), [savedDatabaseSettings])
-  const [learner, setLearner, learnerSyncStatus, pullLearner] = useSyncedLocalStorageState<LearnerState>(
-    storageKey,
-    initialLearner,
-    databaseSettings,
+  const githubSettings = useMemo(() => normalizeGitHubSyncSettings(savedGitHubSettings), [savedGitHubSettings])
+  const [learner, setLearner] = useLocalStorageState<LearnerState>(storageKey, initialLearner)
+  const [assets, setAssets] = useLocalStorageState<AssetItem[]>(assetStorageKey, defaultAssets)
+  const [savedReviewState, setReviewState] = useLocalStorageState<AssetReviewState>(reviewStorageKey, initialReviewState)
+  const [savedSourceSettings, setSourceSettings] = useLocalStorageState<ImageSourceSettings>(
+    sourceSettingsStorageKey,
+    initialSourceSettings,
   )
-  const [assets, setAssets, assetSyncStatus, pullAssets] = useSyncedLocalStorageState<AssetItem[]>(
-    assetStorageKey,
-    defaultAssets,
-    databaseSettings,
-  )
-  const [savedReviewState, setReviewState, reviewSyncStatus, pullReviewState] =
-    useSyncedLocalStorageState<AssetReviewState>(reviewStorageKey, initialReviewState, databaseSettings)
-  const [savedSourceSettings, setSourceSettings, sourceSyncStatus, pullSourceSettings] =
-    useSyncedLocalStorageState<ImageSourceSettings>(sourceSettingsStorageKey, initialSourceSettings, databaseSettings)
   const reviewState = useMemo(() => mergeReviewState(defaultAssets, savedReviewState), [savedReviewState])
   const sourceSettings = useMemo(() => normalizeImageSourceSettings(savedSourceSettings), [savedSourceSettings])
   const activeAssets = useMemo(() => applyApprovedReviewStateToAssets(assets, reviewState), [assets, reviewState])
+  const appStateDocument = useMemo<AppStateDocument>(
+    () => ({
+      assetReview: reviewState,
+      assets,
+      imageSourceSettings: sourceSettings,
+      learner,
+      project: 'Toddler Language Atlas',
+      schemaVersion: 'tla-github-state.v1',
+    }),
+    [assets, learner, reviewState, sourceSettings],
+  )
+  const [syncStatus, pullSharedState, pushSharedState] = useGitHubJsonSync<AppStateDocument>({
+    onRemoteValue: applyAppStateDocument,
+    settings: githubSettings,
+    value: appStateDocument,
+  })
   const [view, setView] = useState<ViewMode>('dashboard')
   const recommendations = useMemo(() => recommendNextActivities(content, learner, 6), [learner])
   const simulations = useMemo(() => runSimulationSuite(content), [])
   const coverage = useMemo(() => domainCoverage(content, learner.skill_states), [learner])
-  const syncStatuses = [learnerSyncStatus, assetSyncStatus, reviewSyncStatus, sourceSyncStatus]
 
   function logObservation(input: {
     skillIds: string[]
@@ -110,12 +127,16 @@ function App() {
     setView('dashboard')
   }
 
-  function updateDatabaseSettings(patch: Partial<SharedDatabaseSettings>) {
-    setSavedDatabaseSettings(normalizeSharedDatabaseSettings({ ...databaseSettings, ...patch }))
+  function applyAppStateDocument(document: AppStateDocument) {
+    if (document.schemaVersion !== 'tla-github-state.v1') return
+    setLearner(document.learner)
+    setAssets(document.assets)
+    setReviewState(mergeReviewState(defaultAssets, document.assetReview))
+    setSourceSettings(normalizeImageSourceSettings(document.imageSourceSettings))
   }
 
-  async function pullSharedState() {
-    await Promise.all([pullLearner(), pullAssets(), pullReviewState(), pullSourceSettings()])
+  function updateGitHubSettings(patch: Partial<GitHubSyncSettings>) {
+    setSavedGitHubSettings(normalizeGitHubSyncSettings({ ...githubSettings, ...patch }))
   }
 
   async function addAsset(file: File) {
@@ -182,14 +203,15 @@ function App() {
         <ParentDashboard
           assets={activeAssets}
           coverage={coverage}
-          databaseSettings={databaseSettings}
+          githubSettings={githubSettings}
           learner={learner}
           recommendations={recommendations}
-          syncStatuses={syncStatuses}
+          syncStatus={syncStatus}
           onAddAsset={addAsset}
-          onDatabaseSettingsChange={updateDatabaseSettings}
+          onGitHubSettingsChange={updateGitHubSettings}
           onLogObservation={logObservation}
           onPullSharedState={pullSharedState}
+          onPushSharedState={pushSharedState}
           onResetDemo={resetDemo}
           onStartActivity={(activityId) => {
             setView(activityId === 'act.put_it_somewhere.v1' ? 'put-it-somewhere' : 'photo-point')
@@ -225,27 +247,29 @@ function App() {
 function ParentDashboard({
   assets,
   coverage,
-  databaseSettings,
+  githubSettings,
   learner,
   recommendations,
-  syncStatuses,
+  syncStatus,
   onAddAsset,
-  onDatabaseSettingsChange,
+  onGitHubSettingsChange,
   onLogObservation,
   onPullSharedState,
+  onPushSharedState,
   onResetDemo,
   onStartActivity,
 }: {
   assets: AssetItem[]
   coverage: Array<{ domain: string; total: number; active: number; mastered: number }>
-  databaseSettings: SharedDatabaseSettings
+  githubSettings: GitHubSyncSettings
   learner: LearnerState
   recommendations: Recommendation[]
-  syncStatuses: SyncedStateStatus[]
+  syncStatus: SyncedStateStatus
   onAddAsset: (file: File) => void
-  onDatabaseSettingsChange: (patch: Partial<SharedDatabaseSettings>) => void
+  onGitHubSettingsChange: (patch: Partial<GitHubSyncSettings>) => void
   onLogObservation: (input: ObservationInput) => void
   onPullSharedState: () => Promise<void>
+  onPushSharedState: () => Promise<void>
   onResetDemo: () => void
   onStartActivity: (activityId: string) => void
 }) {
@@ -326,10 +350,11 @@ function ParentDashboard({
       <QuickLogPanel learner={learner} onLogObservation={onLogObservation} />
 
       <SyncSettingsPanel
-        settings={databaseSettings}
-        statuses={syncStatuses}
-        onChange={onDatabaseSettingsChange}
+        settings={githubSettings}
+        status={syncStatus}
+        onChange={onGitHubSettingsChange}
         onPull={onPullSharedState}
+        onPush={onPushSharedState}
       />
     </section>
   )
@@ -338,20 +363,22 @@ function ParentDashboard({
 function SyncSettingsPanel({
   onChange,
   onPull,
+  onPush,
   settings,
-  statuses,
+  status,
 }: {
-  onChange: (patch: Partial<SharedDatabaseSettings>) => void
+  onChange: (patch: Partial<GitHubSyncSettings>) => void
   onPull: () => Promise<void>
-  settings: SharedDatabaseSettings
-  statuses: SyncedStateStatus[]
+  onPush: () => Promise<void>
+  settings: GitHubSyncSettings
+  status: SyncedStateStatus
 }) {
-  const summary = summarizeSyncStatus(settings, statuses)
+  const summary = summarizeSyncStatus(settings, status)
 
   return (
     <div className="sync-panel">
       <div className="section-title">
-        <h2>Database Sync</h2>
+        <h2>GitHub Sync</h2>
         <p>{summary}</p>
       </div>
       <div className="sync-fields">
@@ -364,32 +391,46 @@ function SyncSettingsPanel({
           <span>Enabled</span>
         </label>
         <label>
-          <span>Supabase URL</span>
+          <span>Owner</span>
           <input
             autoComplete="off"
-            onChange={(event) => onChange({ supabaseUrl: event.target.value })}
-            placeholder="https://project.supabase.co"
-            value={settings.supabaseUrl}
+            onChange={(event) => onChange({ owner: event.target.value })}
+            value={settings.owner}
           />
         </label>
         <label>
-          <span>Anon Key</span>
+          <span>Repo</span>
+          <input autoComplete="off" onChange={(event) => onChange({ repo: event.target.value })} value={settings.repo} />
+        </label>
+        <label>
+          <span>Branch</span>
           <input
             autoComplete="off"
-            onChange={(event) => onChange({ supabaseAnonKey: event.target.value })}
-            placeholder="ey..."
+            onChange={(event) => onChange({ branch: event.target.value })}
+            value={settings.branch}
+          />
+        </label>
+        <label>
+          <span>State Path</span>
+          <input autoComplete="off" onChange={(event) => onChange({ path: event.target.value })} value={settings.path} />
+        </label>
+        <label>
+          <span>Token</span>
+          <input
+            autoComplete="off"
+            onChange={(event) => onChange({ token: event.target.value })}
+            placeholder="Fine-grained token"
             type="password"
-            value={settings.supabaseAnonKey}
+            value={settings.token}
           />
-        </label>
-        <label>
-          <span>Namespace</span>
-          <input onChange={(event) => onChange({ namespace: event.target.value })} value={settings.namespace} />
         </label>
       </div>
       <div className="sync-actions">
         <button type="button" onClick={() => void onPull()}>
-          Pull Latest
+          Pull
+        </button>
+        <button type="button" onClick={() => void onPush()}>
+          Push
         </button>
       </div>
     </div>
@@ -1170,16 +1211,13 @@ function sourceFromApprovedCandidate(
   }
 }
 
-function summarizeSyncStatus(settings: SharedDatabaseSettings, statuses: SyncedStateStatus[]): string {
+function summarizeSyncStatus(settings: GitHubSyncSettings, status: SyncedStateStatus): string {
   if (!settings.enabled) return 'Local'
-  if (statuses.some((status) => status.loading)) return 'Syncing'
-  if (statuses.some((status) => status.error)) return 'Error'
-  const lastSyncedAt = statuses
-    .map((status) => status.lastSyncedAt)
-    .filter(Boolean)
-    .sort()
-    .at(-1)
-  return lastSyncedAt ? `Synced ${new Date(lastSyncedAt).toLocaleTimeString()}` : 'Ready'
+  if (!status.remoteEnabled) return 'Not Configured'
+  if (status.loading) return 'Pulling'
+  if (status.saving) return 'Saving'
+  if (status.error) return 'Error'
+  return status.lastSyncedAt ? `Synced ${new Date(status.lastSyncedAt).toLocaleTimeString()}` : 'Ready'
 }
 
 function fileToDataUrl(file: File): Promise<string> {

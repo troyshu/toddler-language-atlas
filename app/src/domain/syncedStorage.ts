@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  isSharedDatabaseConfigured,
-  loadSharedValue,
-  normalizeSharedDatabaseSettings,
-  saveSharedValue,
-  type SharedDatabaseSettings,
+  githubSyncFingerprint,
+  isGitHubSyncConfigured,
+  loadGitHubJsonFile,
+  normalizeGitHubSyncSettings,
+  saveGitHubJsonFile,
+  type GitHubSyncSettings,
 } from './sharedState'
 
 export interface SyncedStateStatus {
@@ -12,100 +13,125 @@ export interface SyncedStateStatus {
   lastSyncedAt: string
   loading: boolean
   remoteEnabled: boolean
+  saving: boolean
 }
 
-export function useSyncedLocalStorageState<T>(
-  key: string,
-  initialValue: T,
-  databaseSettings: SharedDatabaseSettings,
-): [T, (next: T) => void, SyncedStateStatus, () => Promise<void>] {
-  const normalizedSettings = useMemo(() => normalizeSharedDatabaseSettings(databaseSettings), [databaseSettings])
-  const remoteEnabled = isSharedDatabaseConfigured(normalizedSettings)
-  const [value, setValue] = useState<T>(() => readLocalStorageValue(key, initialValue))
+export function useGitHubJsonSync<T>({
+  onRemoteValue,
+  settings,
+  value,
+}: {
+  onRemoteValue: (nextValue: T) => void
+  settings: GitHubSyncSettings
+  value: T
+}): [SyncedStateStatus, () => Promise<void>, () => Promise<void>] {
+  const normalizedSettings = useMemo(() => normalizeGitHubSyncSettings(settings), [settings])
+  const settingsFingerprint = useMemo(() => githubSyncFingerprint(normalizedSettings), [normalizedSettings])
+  const remoteEnabled = isGitHubSyncConfigured(normalizedSettings)
   const latestValueRef = useRef(value)
+  const onRemoteValueRef = useRef(onRemoteValue)
+  const shaRef = useRef<string | undefined>(undefined)
+  const readyRef = useRef(false)
+  const savingQueueRef = useRef(Promise.resolve())
   const [status, setStatus] = useState<SyncedStateStatus>({
     error: '',
     lastSyncedAt: '',
     loading: false,
     remoteEnabled,
+    saving: false,
   })
 
   useEffect(() => {
     latestValueRef.current = value
-    window.localStorage.setItem(key, JSON.stringify(value))
-  }, [key, value])
+  }, [value])
+
+  useEffect(() => {
+    onRemoteValueRef.current = onRemoteValue
+  }, [onRemoteValue])
 
   const pullRemote = useCallback(async () => {
-    if (!isSharedDatabaseConfigured(normalizedSettings)) {
-      setStatus((current) => ({ ...current, error: '', loading: false, remoteEnabled: false }))
+    if (!isGitHubSyncConfigured(normalizedSettings)) {
+      readyRef.current = false
+      shaRef.current = undefined
+      setStatus((current) => ({ ...current, error: '', loading: false, remoteEnabled: false, saving: false }))
       return
     }
 
     setStatus((current) => ({ ...current, error: '', loading: true, remoteEnabled: true }))
     try {
-      const remoteValue = await loadSharedValue<T>(normalizedSettings, key)
-      if (remoteValue !== null) {
-        setValue(remoteValue)
-        window.localStorage.setItem(key, JSON.stringify(remoteValue))
+      const remoteFile = await loadGitHubJsonFile<T>(normalizedSettings)
+      if (remoteFile) {
+        shaRef.current = remoteFile.sha
+        readyRef.current = true
+        onRemoteValueRef.current(remoteFile.value)
       } else {
-        await saveSharedValue(normalizedSettings, key, latestValueRef.current)
+        shaRef.current = await saveGitHubJsonFile(normalizedSettings, latestValueRef.current)
+        readyRef.current = true
       }
       setStatus({
         error: '',
         lastSyncedAt: new Date().toISOString(),
         loading: false,
         remoteEnabled: true,
+        saving: false,
       })
     } catch (error) {
+      readyRef.current = false
       setStatus({
-        error: error instanceof Error ? error.message : 'Database load failed.',
+        error: error instanceof Error ? error.message : 'GitHub sync failed.',
         lastSyncedAt: '',
         loading: false,
         remoteEnabled: true,
+        saving: false,
       })
     }
-  }, [key, normalizedSettings])
+  }, [normalizedSettings])
+
+  const pushRemote = useCallback(async () => {
+    if (!isGitHubSyncConfigured(normalizedSettings)) return
+    if (!readyRef.current) {
+      await pullRemote()
+      return
+    }
+
+    setStatus((current) => ({ ...current, error: '', remoteEnabled: true, saving: true }))
+    savingQueueRef.current = savingQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        shaRef.current = await saveGitHubJsonFile(normalizedSettings, latestValueRef.current, shaRef.current)
+        setStatus({
+          error: '',
+          lastSyncedAt: new Date().toISOString(),
+          loading: false,
+          remoteEnabled: true,
+          saving: false,
+        })
+      })
+      .catch((error) => {
+        setStatus({
+          error: error instanceof Error ? error.message : 'GitHub save failed.',
+          lastSyncedAt: '',
+          loading: false,
+          remoteEnabled: true,
+          saving: false,
+        })
+      })
+    await savingQueueRef.current
+  }, [normalizedSettings, pullRemote])
 
   useEffect(() => {
+    readyRef.current = false
+    shaRef.current = undefined
     void pullRemote()
-  }, [pullRemote])
+  }, [pullRemote, settingsFingerprint])
 
-  const setPersistedValue = useCallback(
-    (next: T) => {
-      setValue(next)
-      window.localStorage.setItem(key, JSON.stringify(next))
-      if (!isSharedDatabaseConfigured(normalizedSettings)) return
+  useEffect(() => {
+    if (!remoteEnabled || !readyRef.current) return
+    const timeout = window.setTimeout(() => {
+      void pushRemote()
+    }, 900)
+    return () => window.clearTimeout(timeout)
+  }, [pushRemote, remoteEnabled, value])
 
-      void saveSharedValue(normalizedSettings, key, next)
-        .then(() =>
-          setStatus({
-            error: '',
-            lastSyncedAt: new Date().toISOString(),
-            loading: false,
-            remoteEnabled: true,
-          }),
-        )
-        .catch((error) =>
-          setStatus({
-            error: error instanceof Error ? error.message : 'Database save failed.',
-            lastSyncedAt: '',
-            loading: false,
-            remoteEnabled: true,
-          }),
-        )
-    },
-    [key, normalizedSettings],
-  )
-
-  return [value, setPersistedValue, status, pullRemote]
-}
-
-function readLocalStorageValue<T>(key: string, initialValue: T): T {
-  const stored = window.localStorage.getItem(key)
-  if (!stored) return initialValue
-  try {
-    return JSON.parse(stored) as T
-  } catch {
-    return initialValue
-  }
+  return [status, pullRemote, pushRemote]
 }

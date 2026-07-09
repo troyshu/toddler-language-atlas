@@ -1,72 +1,105 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  loadSharedValue,
-  normalizeSharedDatabaseSettings,
-  saveSharedValue,
-  type SharedDatabaseSettings,
+  loadGitHubJsonFile,
+  normalizeGitHubSyncSettings,
+  saveGitHubJsonFile,
+  type GitHubSyncSettings,
 } from './sharedState'
 
-const settings: SharedDatabaseSettings = {
+const settings: GitHubSyncSettings = {
+  branch: 'main',
   enabled: true,
-  namespace: 'home',
-  supabaseAnonKey: 'anon-key',
-  supabaseUrl: 'https://example.supabase.co/',
+  owner: 'troyshu',
+  path: '/app-data//state.json/',
+  repo: 'toddler-language-atlas',
+  token: 'gh-token',
 }
 
 afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('shared database settings', () => {
-  it('normalizes namespace and Supabase URL', () => {
-    expect(normalizeSharedDatabaseSettings(settings)).toMatchObject({
-      namespace: 'home',
-      supabaseUrl: 'https://example.supabase.co',
+describe('GitHub sync settings', () => {
+  it('normalizes repo settings and state path', () => {
+    expect(normalizeGitHubSyncSettings(settings)).toMatchObject({
+      branch: 'main',
+      owner: 'troyshu',
+      path: 'app-data/state.json',
+      repo: 'toddler-language-atlas',
     })
-    expect(normalizeSharedDatabaseSettings({ enabled: true }).namespace).toBe('default')
   })
 })
 
-describe('shared value REST client', () => {
-  it('loads a value from the app_state table', async () => {
+describe('GitHub JSON file client', () => {
+  it('loads a source-controlled JSON state file', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
-      json: async () => [{ value: { count: 3 } }],
+      json: async () => ({
+        content: btoa(JSON.stringify({ count: 3 })),
+        encoding: 'base64',
+        sha: 'abc123',
+        type: 'file',
+      }),
       ok: true,
+      status: 200,
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(loadSharedValue(settings, 'learner')).resolves.toEqual({ count: 3 })
+    await expect(loadGitHubJsonFile<{ count: number }>(settings)).resolves.toEqual({
+      sha: 'abc123',
+      value: { count: 3 },
+    })
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toContain('https://example.supabase.co/rest/v1/app_state?')
-    expect(url).toContain('namespace=eq.home')
-    expect(url).toContain('key=eq.learner')
+    expect(url).toBe(
+      'https://api.github.com/repos/troyshu/toddler-language-atlas/contents/app-data/state.json?ref=main',
+    )
     expect(init.headers).toMatchObject({
-      Authorization: 'Bearer anon-key',
-      apikey: 'anon-key',
+      Accept: 'application/vnd.github+json',
+      Authorization: 'Bearer gh-token',
+      'X-GitHub-Api-Version': '2026-03-10',
     })
   })
 
-  it('upserts a value into the app_state table', async () => {
+  it('returns null when the state file does not exist yet', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+      }),
+    )
+
+    await expect(loadGitHubJsonFile(settings)).resolves.toBeNull()
+  })
+
+  it('creates or updates the source-controlled JSON state file', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({
+        content: {
+          sha: 'def456',
+        },
+      }),
       ok: true,
+      status: 200,
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    await saveSharedValue(settings, 'assets', [{ id: 'asset.cup' }])
+    await expect(saveGitHubJsonFile(settings, { count: 4 }, 'abc123')).resolves.toBe('def456')
     const [url, init] = fetchMock.mock.calls[0]
     const body = JSON.parse(init.body)
 
-    expect(url).toBe('https://example.supabase.co/rest/v1/app_state?on_conflict=namespace%2Ckey')
-    expect(init.method).toBe('POST')
+    expect(url).toBe('https://api.github.com/repos/troyshu/toddler-language-atlas/contents/app-data/state.json')
+    expect(init.method).toBe('PUT')
     expect(init.headers).toMatchObject({
-      Authorization: 'Bearer anon-key',
-      Prefer: 'resolution=merge-duplicates,return=minimal',
-      apikey: 'anon-key',
+      Accept: 'application/vnd.github+json',
+      Authorization: 'Bearer gh-token',
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2026-03-10',
     })
     expect(body).toMatchObject({
-      key: 'assets',
-      namespace: 'home',
-      value: [{ id: 'asset.cup' }],
+      branch: 'main',
+      content: btoa(`${JSON.stringify({ count: 4 }, null, 2)}\n`),
+      sha: 'abc123',
     })
+    expect(body.message).toContain('Update Toddler Language Atlas state')
   })
 })

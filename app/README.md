@@ -16,19 +16,19 @@ durable bundled assets, run:
 npm run apply-asset-review -- path/to/manifest.json
 ```
 
-## Shared Database Sync
+## GitHub JSON Sync
 
 The app can sync learner progress, active assets, review approvals, and image
-source settings through Supabase. Run `supabase/app_state.sql` in a Supabase SQL
-editor, then either paste the URL/key into the in-app Database Sync panel or
-build with:
+source settings to one source-controlled JSON file in this repo. Create a
+fine-grained GitHub token with repository Contents read/write permission, then
+paste it into the in-app GitHub Sync panel or build with:
 
 ```sh
-VITE_SUPABASE_URL=... VITE_SUPABASE_ANON_KEY=... VITE_SUPABASE_NAMESPACE=default npm run build -- --base=/toddler-language-atlas/
+VITE_GITHUB_SYNC_TOKEN=... npm run build -- --base=/toddler-language-atlas/
 ```
 
-The schema uses public read/write policies because this private prototype does
-not have user auth yet.
+Default sync target: `troyshu/toddler-language-atlas`, branch `main`, path
+`app-data/state.json`.
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
