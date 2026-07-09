@@ -16,6 +16,20 @@ durable bundled assets, run:
 npm run apply-asset-review -- path/to/manifest.json
 ```
 
+## Shared Database Sync
+
+The app can sync learner progress, active assets, review approvals, and image
+source settings through Supabase. Run `supabase/app_state.sql` in a Supabase SQL
+editor, then either paste the URL/key into the in-app Database Sync panel or
+build with:
+
+```sh
+VITE_SUPABASE_URL=... VITE_SUPABASE_ANON_KEY=... VITE_SUPABASE_NAMESPACE=default npm run build -- --base=/toddler-language-atlas/
+```
+
+The schema uses public read/write policies because this private prototype does
+not have user auth yet.
+
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
 Currently, two official plugins are available:

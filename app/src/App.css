@@ -109,6 +109,7 @@ button:hover,
 .asset-panel,
 .parent-prompt-panel,
 .log-panel,
+.sync-panel,
 .simulation-panel {
   background: #fff;
   border: 1px solid #d8d3c8;
@@ -205,6 +206,62 @@ button:hover,
 
 .parent-prompt-card .score-buttons {
   margin-top: 2px;
+}
+
+.sync-fields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(120px, 0.55fr) minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(120px, 0.6fr);
+}
+
+.sync-fields label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sync-fields label > span {
+  color: #66716f;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sync-fields input[type='password'],
+.sync-fields input[type='text'],
+.sync-fields input:not([type]) {
+  background: #fff;
+  border: 1px solid #cfc8ba;
+  border-radius: 7px;
+  color: #18201f;
+  font: inherit;
+  min-height: 42px;
+  min-width: 0;
+  padding: 9px 10px;
+  width: 100%;
+}
+
+.sync-fields .sync-toggle {
+  align-items: center;
+  background: #f7f4ed;
+  border: 1px solid #eee9df;
+  border-radius: 7px;
+  display: flex;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.sync-fields .sync-toggle input {
+  height: 18px;
+  margin: 0;
+  width: 18px;
+}
+
+.sync-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 
 .pill {
@@ -1323,6 +1380,7 @@ input {
   }
 
   .quick-log-fields,
+  .sync-fields,
   .score-buttons,
   .score-buttons.compact {
     grid-template-columns: 1fr 1fr;
@@ -1425,6 +1483,7 @@ input {
   }
 
   .score-buttons,
+  .sync-fields,
   .score-buttons.compact {
     grid-template-columns: 1fr;
   }

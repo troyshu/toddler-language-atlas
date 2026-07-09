@@ -10,36 +10,28 @@ import {
   type AssetReviewDecision,
   type AssetReviewState,
 } from './domain/assetReview'
-import { searchAssetCandidates, type AssetCandidateSearchOptions } from './domain/assetCandidateProviders'
-import { useLocalStorageState } from './domain/storage'
+import { searchAssetCandidates } from './domain/assetCandidateProviders'
+import {
+  normalizeImageSourceSettings,
+  type ImageSourceSettings,
+} from './domain/assetSourceSettings'
 import type { AssetItem } from './domain/types'
-
-const reviewStorageKey = 'tla.assetReview.v1'
-const sourceSettingsStorageKey = 'tla.assetSourceSettings.v1'
 
 type ReviewFilter = 'all' | AssetReviewDecision
 
-interface ImageSourceSettings {
-  includeOpenSources: boolean
-  pexelsApiKey: string
-  pixabayApiKey: string
-}
-
-const initialSourceSettings: ImageSourceSettings = {
-  includeOpenSources: true,
-  pexelsApiKey: import.meta.env.VITE_PEXELS_API_KEY ?? '',
-  pixabayApiKey: import.meta.env.VITE_PIXABAY_API_KEY ?? '',
-}
-
-export function AssetReviewPanel({ assets }: { assets: AssetItem[] }) {
-  const initialState = useMemo(() => mergeReviewState(assets, undefined), [assets])
-  const [savedReviewState, setSavedReviewState] = useLocalStorageState<AssetReviewState>(reviewStorageKey, initialState)
-  const [savedSourceSettings, setSavedSourceSettings] = useLocalStorageState<ImageSourceSettings>(
-    sourceSettingsStorageKey,
-    initialSourceSettings,
-  )
-  const reviewState = useMemo(() => mergeReviewState(assets, savedReviewState), [assets, savedReviewState])
-  const sourceSettings = useMemo(() => normalizeImageSourceSettings(savedSourceSettings), [savedSourceSettings])
+export function AssetReviewPanel({
+  assets,
+  onReviewStateChange,
+  onSourceSettingsChange,
+  reviewState,
+  sourceSettings,
+}: {
+  assets: AssetItem[]
+  onReviewStateChange: (nextState: AssetReviewState) => void
+  onSourceSettingsChange: (nextSettings: ImageSourceSettings) => void
+  reviewState: AssetReviewState
+  sourceSettings: ImageSourceSettings
+}) {
   const summary = useMemo(() => reviewSummary(reviewState), [reviewState])
   const [filter, setFilter] = useState<ReviewFilter>('all')
   const [candidateQueries, setCandidateQueries] = useState<Record<string, string>>({})
@@ -53,11 +45,11 @@ export function AssetReviewPanel({ assets }: { assets: AssetItem[] }) {
   }, [assets, filter, reviewState])
 
   function setReviewState(nextState: AssetReviewState) {
-    setSavedReviewState(mergeReviewState(assets, nextState))
+    onReviewStateChange(mergeReviewState(assets, nextState))
   }
 
   function setSourceSettings(patch: Partial<ImageSourceSettings>) {
-    setSavedSourceSettings(normalizeImageSourceSettings({ ...sourceSettings, ...patch }))
+    onSourceSettingsChange(normalizeImageSourceSettings({ ...sourceSettings, ...patch }))
   }
 
   function markAsset(assetId: string, decision: AssetReviewDecision) {
@@ -391,15 +383,7 @@ function reviewPillClass(decision: AssetReviewDecision): string {
   return 'exploration'
 }
 
-function normalizeImageSourceSettings(input: Partial<ImageSourceSettings> | null | undefined): ImageSourceSettings {
-  return {
-    includeOpenSources: typeof input?.includeOpenSources === 'boolean' ? input.includeOpenSources : true,
-    pexelsApiKey: typeof input?.pexelsApiKey === 'string' ? input.pexelsApiKey : '',
-    pixabayApiKey: typeof input?.pixabayApiKey === 'string' ? input.pixabayApiKey : '',
-  }
-}
-
-function activeSourceLabels(settings: AssetCandidateSearchOptions): string[] {
+function activeSourceLabels(settings: ImageSourceSettings): string[] {
   const labels: string[] = []
   if (settings.pexelsApiKey?.trim()) labels.push('Pexels')
   if (settings.pixabayApiKey?.trim()) labels.push('Pixabay')

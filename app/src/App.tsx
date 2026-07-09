@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { AssetReviewPanel } from './AssetReview'
 import { defaultAssets } from './domain/assets'
+import { mergeReviewState, type AssetReviewState } from './domain/assetReview'
+import {
+  initialSourceSettings,
+  normalizeImageSourceSettings,
+  sourceSettingsStorageKey,
+  type ImageSourceSettings,
+} from './domain/assetSourceSettings'
 import { content } from './domain/content'
 import {
   buildGraphModel,
@@ -14,9 +21,16 @@ import {
 } from './domain/graph'
 import { createDemoLearner, learnerFromSimulation, makeObservation, recordObservation } from './domain/mastery'
 import { recommendNextActivities } from './domain/recommendations'
+import {
+  defaultSharedDatabaseSettings,
+  normalizeSharedDatabaseSettings,
+  sharedDatabaseStorageKey,
+  type SharedDatabaseSettings,
+} from './domain/sharedState'
 import { runSimulationSuite } from './domain/simulations'
 import { useLocalStorageState } from './domain/storage'
-import type { AssetItem, LearnerState, ObservationResult, PromptLevel, Recommendation, SkillNode } from './domain/types'
+import { useSyncedLocalStorageState, type SyncedStateStatus } from './domain/syncedStorage'
+import type { AssetItem, AssetSource, LearnerState, ObservationResult, PromptLevel, Recommendation, SkillNode } from './domain/types'
 
 type ViewMode = 'dashboard' | 'graph' | 'photo-point' | 'put-it-somewhere' | 'asset-review' | 'simulations'
 type ScoreChoice = 'got_it' | 'with_help' | 'almost' | 'not_yet'
@@ -39,15 +53,38 @@ const scoreChoices: Array<{ label: string; value: ScoreChoice; response: Observa
 
 const storageKey = 'tla.mvp.learner.v1'
 const assetStorageKey = 'tla.mvp.assets.v2'
+const reviewStorageKey = 'tla.assetReview.v1'
 
 function App() {
   const initialLearner = useMemo(() => createDemoLearner(content), [])
-  const [learner, setLearner] = useLocalStorageState<LearnerState>(storageKey, initialLearner)
-  const [assets, setAssets] = useLocalStorageState<AssetItem[]>(assetStorageKey, defaultAssets)
+  const initialReviewState = useMemo(() => mergeReviewState(defaultAssets, undefined), [])
+  const [savedDatabaseSettings, setSavedDatabaseSettings] = useLocalStorageState<SharedDatabaseSettings>(
+    sharedDatabaseStorageKey,
+    defaultSharedDatabaseSettings,
+  )
+  const databaseSettings = useMemo(() => normalizeSharedDatabaseSettings(savedDatabaseSettings), [savedDatabaseSettings])
+  const [learner, setLearner, learnerSyncStatus, pullLearner] = useSyncedLocalStorageState<LearnerState>(
+    storageKey,
+    initialLearner,
+    databaseSettings,
+  )
+  const [assets, setAssets, assetSyncStatus, pullAssets] = useSyncedLocalStorageState<AssetItem[]>(
+    assetStorageKey,
+    defaultAssets,
+    databaseSettings,
+  )
+  const [savedReviewState, setReviewState, reviewSyncStatus, pullReviewState] =
+    useSyncedLocalStorageState<AssetReviewState>(reviewStorageKey, initialReviewState, databaseSettings)
+  const [savedSourceSettings, setSourceSettings, sourceSyncStatus, pullSourceSettings] =
+    useSyncedLocalStorageState<ImageSourceSettings>(sourceSettingsStorageKey, initialSourceSettings, databaseSettings)
+  const reviewState = useMemo(() => mergeReviewState(defaultAssets, savedReviewState), [savedReviewState])
+  const sourceSettings = useMemo(() => normalizeImageSourceSettings(savedSourceSettings), [savedSourceSettings])
+  const activeAssets = useMemo(() => applyApprovedReviewStateToAssets(assets, reviewState), [assets, reviewState])
   const [view, setView] = useState<ViewMode>('dashboard')
   const recommendations = useMemo(() => recommendNextActivities(content, learner, 6), [learner])
   const simulations = useMemo(() => runSimulationSuite(content), [])
   const coverage = useMemo(() => domainCoverage(content, learner.skill_states), [learner])
+  const syncStatuses = [learnerSyncStatus, assetSyncStatus, reviewSyncStatus, sourceSyncStatus]
 
   function logObservation(input: {
     skillIds: string[]
@@ -71,6 +108,14 @@ function App() {
     setLearner(createDemoLearner(content))
     setAssets(defaultAssets)
     setView('dashboard')
+  }
+
+  function updateDatabaseSettings(patch: Partial<SharedDatabaseSettings>) {
+    setSavedDatabaseSettings(normalizeSharedDatabaseSettings({ ...databaseSettings, ...patch }))
+  }
+
+  async function pullSharedState() {
+    await Promise.all([pullLearner(), pullAssets(), pullReviewState(), pullSourceSettings()])
   }
 
   async function addAsset(file: File) {
@@ -135,12 +180,16 @@ function App() {
 
       {view === 'dashboard' && (
         <ParentDashboard
-          assets={assets}
+          assets={activeAssets}
           coverage={coverage}
+          databaseSettings={databaseSettings}
           learner={learner}
           recommendations={recommendations}
+          syncStatuses={syncStatuses}
           onAddAsset={addAsset}
+          onDatabaseSettingsChange={updateDatabaseSettings}
           onLogObservation={logObservation}
+          onPullSharedState={pullSharedState}
           onResetDemo={resetDemo}
           onStartActivity={(activityId) => {
             setView(activityId === 'act.put_it_somewhere.v1' ? 'put-it-somewhere' : 'photo-point')
@@ -151,14 +200,22 @@ function App() {
       {view === 'graph' && <GraphPanel learner={learner} recommendations={recommendations} />}
 
       {view === 'photo-point' && (
-        <PhotoPointActivity assets={assets} onBack={() => setView('dashboard')} onLogObservation={logObservation} />
+        <PhotoPointActivity assets={activeAssets} onBack={() => setView('dashboard')} onLogObservation={logObservation} />
       )}
 
       {view === 'put-it-somewhere' && (
-        <PutItSomewhereActivity assets={assets} onBack={() => setView('dashboard')} onLogObservation={logObservation} />
+        <PutItSomewhereActivity assets={activeAssets} onBack={() => setView('dashboard')} onLogObservation={logObservation} />
       )}
 
-      {view === 'asset-review' && <AssetReviewPanel assets={defaultAssets} />}
+      {view === 'asset-review' && (
+        <AssetReviewPanel
+          assets={applyApprovedReviewStateToAssets(defaultAssets, reviewState)}
+          reviewState={reviewState}
+          sourceSettings={sourceSettings}
+          onReviewStateChange={setReviewState}
+          onSourceSettingsChange={setSourceSettings}
+        />
+      )}
 
       {view === 'simulations' && <SimulationPanel results={simulations} />}
     </main>
@@ -168,19 +225,27 @@ function App() {
 function ParentDashboard({
   assets,
   coverage,
+  databaseSettings,
   learner,
   recommendations,
+  syncStatuses,
   onAddAsset,
+  onDatabaseSettingsChange,
   onLogObservation,
+  onPullSharedState,
   onResetDemo,
   onStartActivity,
 }: {
   assets: AssetItem[]
   coverage: Array<{ domain: string; total: number; active: number; mastered: number }>
+  databaseSettings: SharedDatabaseSettings
   learner: LearnerState
   recommendations: Recommendation[]
+  syncStatuses: SyncedStateStatus[]
   onAddAsset: (file: File) => void
+  onDatabaseSettingsChange: (patch: Partial<SharedDatabaseSettings>) => void
   onLogObservation: (input: ObservationInput) => void
+  onPullSharedState: () => Promise<void>
   onResetDemo: () => void
   onStartActivity: (activityId: string) => void
 }) {
@@ -259,7 +324,75 @@ function ParentDashboard({
       <ParentPromptPanel recommendations={recommendations} onLogObservation={onLogObservation} />
 
       <QuickLogPanel learner={learner} onLogObservation={onLogObservation} />
+
+      <SyncSettingsPanel
+        settings={databaseSettings}
+        statuses={syncStatuses}
+        onChange={onDatabaseSettingsChange}
+        onPull={onPullSharedState}
+      />
     </section>
+  )
+}
+
+function SyncSettingsPanel({
+  onChange,
+  onPull,
+  settings,
+  statuses,
+}: {
+  onChange: (patch: Partial<SharedDatabaseSettings>) => void
+  onPull: () => Promise<void>
+  settings: SharedDatabaseSettings
+  statuses: SyncedStateStatus[]
+}) {
+  const summary = summarizeSyncStatus(settings, statuses)
+
+  return (
+    <div className="sync-panel">
+      <div className="section-title">
+        <h2>Database Sync</h2>
+        <p>{summary}</p>
+      </div>
+      <div className="sync-fields">
+        <label className="sync-toggle">
+          <input
+            checked={settings.enabled}
+            onChange={(event) => onChange({ enabled: event.target.checked })}
+            type="checkbox"
+          />
+          <span>Enabled</span>
+        </label>
+        <label>
+          <span>Supabase URL</span>
+          <input
+            autoComplete="off"
+            onChange={(event) => onChange({ supabaseUrl: event.target.value })}
+            placeholder="https://project.supabase.co"
+            value={settings.supabaseUrl}
+          />
+        </label>
+        <label>
+          <span>Anon Key</span>
+          <input
+            autoComplete="off"
+            onChange={(event) => onChange({ supabaseAnonKey: event.target.value })}
+            placeholder="ey..."
+            type="password"
+            value={settings.supabaseAnonKey}
+          />
+        </label>
+        <label>
+          <span>Namespace</span>
+          <input onChange={(event) => onChange({ namespace: event.target.value })} value={settings.namespace} />
+        </label>
+      </div>
+      <div className="sync-actions">
+        <button type="button" onClick={() => void onPull()}>
+          Pull Latest
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -1007,6 +1140,46 @@ function formatLabel(value: string): string {
 
 function safeClass(value: string): string {
   return value.replace(/[^a-zA-Z0-9_-]/g, '_')
+}
+
+function applyApprovedReviewStateToAssets(assets: AssetItem[], reviewState: AssetReviewState): AssetItem[] {
+  return assets.map((asset) => {
+    const record = reviewState[asset.id]
+    const candidate = record?.decision === 'approved_replacement' ? record.selectedCandidate : undefined
+    if (!candidate) return asset
+    return {
+      ...asset,
+      kind: 'image',
+      source: sourceFromApprovedCandidate(candidate, record.updatedAt),
+      value: candidate.downloadUrl,
+    }
+  })
+}
+
+function sourceFromApprovedCandidate(
+  candidate: NonNullable<AssetReviewState[string]['selectedCandidate']>,
+  updatedAt: string | undefined,
+): AssetSource {
+  return {
+    creator: candidate.creator,
+    license: candidate.license,
+    provider: candidate.provider,
+    retrievedAt: updatedAt?.slice(0, 10) ?? 'runtime',
+    sourceUrl: candidate.sourceUrl,
+    title: candidate.title,
+  }
+}
+
+function summarizeSyncStatus(settings: SharedDatabaseSettings, statuses: SyncedStateStatus[]): string {
+  if (!settings.enabled) return 'Local'
+  if (statuses.some((status) => status.loading)) return 'Syncing'
+  if (statuses.some((status) => status.error)) return 'Error'
+  const lastSyncedAt = statuses
+    .map((status) => status.lastSyncedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1)
+  return lastSyncedAt ? `Synced ${new Date(lastSyncedAt).toLocaleTimeString()}` : 'Ready'
 }
 
 function fileToDataUrl(file: File): Promise<string> {
