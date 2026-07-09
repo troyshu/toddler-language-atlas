@@ -1044,7 +1044,8 @@ input {
   text-transform: uppercase;
 }
 
-.image-source-grid input[type='password'] {
+.image-source-grid input[type='password'],
+.image-source-grid input[type='text'] {
   background: #fff;
   border: 1px solid #cfc8ba;
   border-radius: 7px;
@@ -1282,6 +1283,13 @@ input {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+.candidate-query-preview {
+  color: #66716f;
+  font-size: 13px;
+  font-weight: 800;
+  margin: -4px 0 0;
+}
+
 .candidate-grid {
   border-top: 1px solid #eee9df;
   display: grid;
@@ -1293,7 +1301,7 @@ input {
   border-bottom: 1px solid #eee9df;
   display: grid;
   gap: 12px;
-  grid-template-columns: 96px minmax(0, 1fr) auto;
+  grid-template-columns: 170px minmax(0, 1fr) auto;
   padding: 12px 0;
 }
 
@@ -1301,7 +1309,14 @@ input {
   background: #f4faee;
 }
 
-.candidate-card img,
+.candidate-preview-stack {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 96px 58px;
+}
+
+.candidate-preview-stack > img,
 .candidate-image-fallback {
   background: #f7f4ed;
   border: 1px solid #d8d3c8;
@@ -1309,6 +1324,26 @@ input {
   height: 96px;
   object-fit: cover;
   width: 96px;
+}
+
+.candidate-child-preview {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d8d3c8;
+  border-radius: 7px;
+  display: flex;
+  height: 58px;
+  justify-content: center;
+  padding: 5px;
+  width: 58px;
+}
+
+.candidate-child-preview img {
+  border: 0;
+  border-radius: 5px;
+  height: 48px;
+  object-fit: cover;
+  width: 48px;
 }
 
 .candidate-image-fallback {
@@ -1477,17 +1512,31 @@ input {
 
   .candidate-card {
     align-items: stretch;
-    grid-template-columns: 82px minmax(0, 1fr);
+    grid-template-columns: 144px minmax(0, 1fr);
   }
 
   .candidate-card button {
     grid-column: 1 / -1;
   }
 
-  .candidate-card img,
+  .candidate-preview-stack > img,
   .candidate-image-fallback {
     height: 82px;
     width: 82px;
+  }
+
+  .candidate-preview-stack {
+    grid-template-columns: 82px 52px;
+  }
+
+  .candidate-child-preview {
+    height: 52px;
+    width: 52px;
+  }
+
+  .candidate-child-preview img {
+    height: 42px;
+    width: 42px;
   }
 }
 
@@ -1570,8 +1619,13 @@ input {
   .review-current,
   .review-metadata-grid,
   .candidate-search-row,
+  .candidate-card,
   .image-source-grid {
     grid-template-columns: 1fr;
+  }
+
+  .candidate-preview-stack {
+    grid-template-columns: 96px 58px;
   }
 
   .review-current img {

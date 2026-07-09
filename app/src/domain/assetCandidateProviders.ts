@@ -7,9 +7,11 @@ export interface AssetCandidateProvider {
 }
 
 export interface AssetCandidateSearchOptions {
+  boostTerms?: string[]
   includeOpenSources?: boolean
   pexelsApiKey?: string
   pixabayApiKey?: string
+  rejectTerms?: string[]
 }
 
 interface WikimediaPage {
@@ -144,7 +146,7 @@ export function buildCandidateProviders(options: AssetCandidateSearchOptions = {
     })
   }
 
-  if (options.includeOpenSources ?? true) {
+  if (options.includeOpenSources ?? false) {
     providers.push(...candidateProviders)
   }
 
@@ -160,7 +162,7 @@ export async function searchAssetCandidates(
   if (!trimmedQuery) return []
   const providers = buildCandidateProviders(options)
   if (providers.length === 0) {
-    throw new Error('Add a Pexels or Pixabay API key, or enable fallback image sources.')
+    throw new Error('Add a Pexels or Pixabay API key, or enable legacy fallback image sources.')
   }
 
   const providerLimit = Math.max(8, Math.ceil(limit / providers.length) + 4)
@@ -172,7 +174,7 @@ export async function searchAssetCandidates(
       .map((result) => (result.reason instanceof Error ? result.reason.message : 'Image source failed.'))
     throw new Error(errors.join(' '))
   }
-  return rankAndFilterAssetCandidates(candidates, trimmedQuery).slice(0, limit)
+  return rankAndFilterAssetCandidates(candidates, trimmedQuery, options).slice(0, limit)
 }
 
 export async function searchPexels(
@@ -346,10 +348,11 @@ export function mapOpenverseCandidates(response: OpenverseResponse): AssetReplac
 export function rankAndFilterAssetCandidates(
   candidates: AssetReplacementCandidate[],
   query: string,
+  options: Pick<AssetCandidateSearchOptions, 'boostTerms' | 'rejectTerms'> = {},
 ): AssetReplacementCandidate[] {
   return uniqueCandidates(candidates)
-    .filter((candidate) => !hasRejectedTerms(candidate))
-    .map((candidate) => ({ candidate, score: scoreCandidate(candidate, query) }))
+    .filter((candidate) => !hasRejectedTerms(candidate, options.rejectTerms ?? []))
+    .map((candidate) => ({ candidate, score: scoreCandidate(candidate, query, options.boostTerms ?? []) }))
     .sort((left, right) => right.score - left.score || left.candidate.title.localeCompare(right.candidate.title))
     .map(({ candidate }) => candidate)
 }
@@ -366,7 +369,7 @@ function uniqueCandidates(candidates: AssetReplacementCandidate[]): AssetReplace
   return unique
 }
 
-function scoreCandidate(candidate: AssetReplacementCandidate, query: string): number {
+function scoreCandidate(candidate: AssetReplacementCandidate, query: string, boostTerms: string[]): number {
   const text = candidateText(candidate)
   const provider = candidate.provider.toLowerCase()
   let score = 0
@@ -381,14 +384,29 @@ function scoreCandidate(candidate: AssetReplacementCandidate, query: string): nu
     else if (text.includes(term)) score += 8
   }
 
+  for (const term of boostTerms) {
+    const normalizedTerm = term.toLowerCase().trim()
+    if (!normalizedTerm) continue
+    if (candidate.title.toLowerCase().includes(normalizedTerm)) score += 24
+    else if (text.includes(normalizedTerm)) score += 10
+  }
+
+  if (/isolated|single|plain|product|white background/i.test(text)) score += 18
   if (/photo|photograph|pexels|pixabay|stock/i.test(text)) score += 8
   if (/cc0|public domain|pdm/i.test(candidate.license)) score += 4
   return score
 }
 
-function hasRejectedTerms(candidate: AssetReplacementCandidate): boolean {
+function hasRejectedTerms(candidate: AssetReplacementCandidate, rejectTerms: string[]): boolean {
   const text = candidateText(candidate)
-  return artifactPattern.test(text) || illustrationPattern.test(text)
+  return (
+    artifactPattern.test(text) ||
+    illustrationPattern.test(text) ||
+    rejectTerms.some((term) => {
+      const normalizedTerm = term.toLowerCase().trim()
+      return normalizedTerm.length > 0 && text.includes(normalizedTerm)
+    })
+  )
 }
 
 function candidateText(candidate: AssetReplacementCandidate): string {

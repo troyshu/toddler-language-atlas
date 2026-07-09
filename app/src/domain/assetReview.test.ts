@@ -9,6 +9,7 @@ import {
   type AssetReplacementCandidate,
 } from './assetReview'
 import {
+  buildCandidateProviders,
   mapOpenverseCandidates,
   mapPexelsCandidates,
   mapPixabayCandidates,
@@ -16,6 +17,7 @@ import {
   normalizeAssetSearchQuery,
   rankAndFilterAssetCandidates,
 } from './assetCandidateProviders'
+import { assetSearchProfile } from './assetSearchProfiles'
 
 const candidate: AssetReplacementCandidate = {
   id: 'wikimedia:File:Better cup.jpg',
@@ -88,6 +90,28 @@ describe('asset review manifests', () => {
 })
 
 describe('asset candidate provider mapping', () => {
+  it('uses modern API sources by default and keeps open sources opt-in', () => {
+    expect(buildCandidateProviders({ pexelsApiKey: '', pixabayApiKey: '' }).map((provider) => provider.id)).toEqual([])
+    expect(
+      buildCandidateProviders({ includeOpenSources: true, pexelsApiKey: '', pixabayApiKey: '' }).map((provider) => provider.id),
+    ).toEqual(['wikimedia', 'openverse'])
+    expect(buildCandidateProviders({ pexelsApiKey: 'pexels-key', pixabayApiKey: 'pixabay-key' }).map((provider) => provider.id)).toEqual([
+      'pexels',
+      'pixabay',
+    ])
+  })
+
+  it('generates toddler-clear replacement queries for ambiguous words', () => {
+    const hat = defaultAssets.find((asset) => asset.label === 'hat')
+    expect(hat).toBeDefined()
+    const profile = assetSearchProfile(hat!)
+
+    expect(profile.query).toContain('baseball cap')
+    expect(profile.query).toContain('white background')
+    expect(profile.boostTerms).toEqual(expect.arrayContaining(['hat', 'cap']))
+    expect(profile.rejectTerms).toEqual(expect.arrayContaining(['person', 'fashion model']))
+  })
+
   it('normalizes descriptive image queries before provider search', () => {
     expect(normalizeAssetSearchQuery('cup everyday object photo')).toBe('cup')
     expect(normalizeAssetSearchQuery('dog animal photograph')).toBe('dog')
@@ -254,5 +278,32 @@ describe('asset candidate provider mapping', () => {
     )
 
     expect(ranked.map((item) => item.id)).toEqual(['pexels:42', 'openverse:cup'])
+  })
+
+  it('uses profile reject terms when ranking candidates', () => {
+    const ranked = rankAndFilterAssetCandidates(
+      [
+        {
+          ...candidate,
+          id: 'pexels:person-hat',
+          provider: 'Pexels',
+          license: 'Pexels License',
+          sourceUrl: 'https://www.pexels.com/photo/person-hat-1/',
+          title: 'Person wearing a fashion hat',
+        },
+        {
+          ...candidate,
+          id: 'pixabay:cap',
+          provider: 'Pixabay',
+          license: 'Pixabay Content License',
+          sourceUrl: 'https://pixabay.com/photos/baseball-cap-2/',
+          title: 'Baseball cap isolated on white background',
+        },
+      ],
+      'baseball cap isolated white background product photo',
+      { boostTerms: ['hat', 'cap'], rejectTerms: ['person', 'fashion'] },
+    )
+
+    expect(ranked.map((item) => item.id)).toEqual(['pixabay:cap'])
   })
 })

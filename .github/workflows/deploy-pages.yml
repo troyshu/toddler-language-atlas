@@ -38,6 +38,9 @@ jobs:
 
       - name: Build site
         working-directory: app
+        env:
+          VITE_PEXELS_API_KEY: ${{ secrets.VITE_PEXELS_API_KEY || secrets.PEXELS_API_KEY || vars.VITE_PEXELS_API_KEY || vars.PEXELS_API_KEY }}
+          VITE_PIXABAY_API_KEY: ${{ secrets.VITE_PIXABAY_API_KEY || secrets.PIXABAY_API_KEY || vars.VITE_PIXABAY_API_KEY || vars.PIXABAY_API_KEY }}
         run: npm run build -- --base=/toddler-language-atlas/
 
       - name: Upload Pages artifact

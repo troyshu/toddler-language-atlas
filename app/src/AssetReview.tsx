@@ -15,6 +15,7 @@ import {
   normalizeImageSourceSettings,
   type ImageSourceSettings,
 } from './domain/assetSourceSettings'
+import { assetSearchProfile } from './domain/assetSearchProfiles'
 import type { AssetItem } from './domain/types'
 
 type ReviewFilter = 'all' | AssetReviewDecision
@@ -70,11 +71,16 @@ export function AssetReviewPanel({
   }
 
   async function findCandidates(asset: AssetItem) {
-    const query = candidateQueries[asset.id]?.trim() || suggestedCandidateQuery(asset)
+    const profile = assetSearchProfile(asset)
+    const query = candidateQueries[asset.id]?.trim() || profile.query
     setSearchingAssetId(asset.id)
     setSearchErrors((current) => ({ ...current, [asset.id]: '' }))
     try {
-      const results = await searchAssetCandidates(query, 12, sourceSettings)
+      const results = await searchAssetCandidates(query, 12, {
+        ...sourceSettings,
+        boostTerms: profile.boostTerms,
+        rejectTerms: profile.rejectTerms,
+      })
       setCandidateResults((current) => ({ ...current, [asset.id]: results }))
       if (results.length === 0) {
         setSearchErrors((current) => ({ ...current, [asset.id]: 'No matching image candidates found.' }))
@@ -244,6 +250,7 @@ export function AssetReviewPanel({
                   {searchingAssetId === asset.id ? 'Searching' : 'Find Images'}
                 </button>
               </div>
+              <p className="candidate-query-preview">Query: {candidateQueries[asset.id]?.trim() || suggestedCandidateQuery(asset)}</p>
 
               {searchErrors[asset.id] && <p className="review-error">{searchErrors[asset.id]}</p>}
 
@@ -292,8 +299,8 @@ function ImageSourceSettingsPanel({
           <input
             autoComplete="off"
             onChange={(event) => onChange({ pexelsApiKey: event.target.value })}
-            placeholder="Optional"
-            type="password"
+            placeholder="Pexels key"
+            type="text"
             value={settings.pexelsApiKey}
           />
         </label>
@@ -302,8 +309,8 @@ function ImageSourceSettingsPanel({
           <input
             autoComplete="off"
             onChange={(event) => onChange({ pixabayApiKey: event.target.value })}
-            placeholder="Optional"
-            type="password"
+            placeholder="Pixabay key"
+            type="text"
             value={settings.pixabayApiKey}
           />
         </label>
@@ -313,7 +320,7 @@ function ImageSourceSettingsPanel({
             onChange={(event) => onChange({ includeOpenSources: event.target.checked })}
             type="checkbox"
           />
-          <span>Openverse/Wikimedia Fallback</span>
+          <span>Legacy Fallback</span>
         </label>
       </div>
     </div>
@@ -333,11 +340,18 @@ function CandidateCard({
 
   return (
     <div className={selected ? 'candidate-card selected' : 'candidate-card'}>
-      {imageFailed ? (
-        <div className="candidate-image-fallback">No Preview</div>
-      ) : (
-        <img alt="" onError={() => setImageFailed(true)} src={candidate.thumbnailUrl} />
-      )}
+      <div className="candidate-preview-stack">
+        {imageFailed ? (
+          <div className="candidate-image-fallback">No Preview</div>
+        ) : (
+          <img alt="" onError={() => setImageFailed(true)} src={candidate.thumbnailUrl} />
+        )}
+        {!imageFailed && (
+          <div className="candidate-child-preview" aria-label="Game-size preview">
+            <img alt="" src={candidate.thumbnailUrl} />
+          </div>
+        )}
+      </div>
       <div>
         <strong>{candidate.title}</strong>
         <span>{candidate.provider}</span>
@@ -387,10 +401,10 @@ function activeSourceLabels(settings: ImageSourceSettings): string[] {
   const labels: string[] = []
   if (settings.pexelsApiKey?.trim()) labels.push('Pexels')
   if (settings.pixabayApiKey?.trim()) labels.push('Pixabay')
-  if (settings.includeOpenSources) labels.push('Openverse/Wikimedia')
+  if (settings.includeOpenSources) labels.push('Legacy Openverse/Wikimedia')
   return labels
 }
 
 function suggestedCandidateQuery(asset: AssetItem): string {
-  return asset.label
+  return assetSearchProfile(asset).query
 }
