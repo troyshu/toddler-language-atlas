@@ -10,6 +10,7 @@ import {
   sourceSettingsStorageKey,
   type ImageSourceSettings,
 } from './domain/assetSourceSettings'
+import { makeChoiceSetWithTarget, randomChoiceSeed } from './domain/choiceSets'
 import { content } from './domain/content'
 import {
   buildGraphModel,
@@ -627,8 +628,12 @@ function PhotoPointActivity({
 }: ActivityComponentProps) {
   const eligibleAssets = useMemo(() => assetsForEligibility(assets, 'photo_point'), [assets])
   const [round, setRound] = useState(0)
+  const [choiceSeed] = useState(randomChoiceSeed)
   const target = eligibleAssets[round % eligibleAssets.length]
-  const choices = useMemo(() => makeChoiceSetWithTarget(eligibleAssets, target, round, 4), [eligibleAssets, round, target])
+  const choices = useMemo(
+    () => makeChoiceSetWithTarget(eligibleAssets, target, round, 4, choiceSeed, defaultAssets),
+    [choiceSeed, eligibleAssets, round, target],
+  )
 
   return (
     <ScoredChoiceActivity
@@ -653,8 +658,12 @@ function ActionMatchActivity({
 }: ActivityComponentProps) {
   const actionAssets = useMemo(() => assetsForEligibility(assets, 'action_label'), [assets])
   const [round, setRound] = useState(0)
+  const [choiceSeed] = useState(randomChoiceSeed)
   const target = actionAssets[round % actionAssets.length]
-  const choices = useMemo(() => makeChoiceSetWithTarget(actionAssets, target, round, 4), [actionAssets, round, target])
+  const choices = useMemo(
+    () => makeChoiceSetWithTarget(actionAssets, target, round, 4, choiceSeed, defaultAssets),
+    [actionAssets, choiceSeed, round, target],
+  )
 
   return (
     <ScoredChoiceActivity
@@ -680,11 +689,15 @@ function CategoryBasketsActivity({
   onLogObservation,
 }: ActivityComponentProps) {
   const [round, setRound] = useState(0)
+  const [choiceSeed] = useState(randomChoiceSeed)
   const category = categoryPrompts[round % categoryPrompts.length]
   const targetPool = assetsForCategory(assets, category.key)
   const target = targetPool[Math.floor(round / categoryPrompts.length) % targetPool.length]
   const distractors = assetsForCategoryDistractors(assets, category.key)
-  const choices = useMemo(() => makeChoiceSetWithTarget([target, ...distractors], target, round, 4), [distractors, round, target])
+  const choices = useMemo(
+    () => makeChoiceSetWithTarget([target, ...distractors], target, round, 4, choiceSeed, defaultAssets),
+    [choiceSeed, distractors, round, target],
+  )
 
   return (
     <ScoredChoiceActivity
@@ -712,12 +725,16 @@ function FeatureFindActivity({
   onLogObservation,
 }: ActivityComponentProps) {
   const [round, setRound] = useState(0)
+  const [choiceSeed] = useState(randomChoiceSeed)
   const feature = featurePrompts[round % featurePrompts.length]
   const targetPool = assets.filter(feature.matches)
   const fallbackPool = targetPool.length ? targetPool : assetsForCategory(assets, 'familiar_object')
   const target = fallbackPool[Math.floor(round / featurePrompts.length) % fallbackPool.length]
   const distractors = assets.filter((asset) => asset.id !== target.id && !feature.matches(asset))
-  const choices = useMemo(() => makeChoiceSetWithTarget([target, ...distractors], target, round, 4), [distractors, round, target])
+  const choices = useMemo(
+    () => makeChoiceSetWithTarget([target, ...distractors], target, round, 4, choiceSeed, defaultAssets),
+    [choiceSeed, distractors, round, target],
+  )
 
   return (
     <ScoredChoiceActivity
@@ -1544,34 +1561,6 @@ function assetsForEligibility(assets: AssetItem[], activityId: string): AssetIte
   if (eligible.length) return eligible
   const defaultEligible = defaultAssets.filter((asset) => isEligibleFor(asset, activityId))
   return defaultEligible.length ? defaultEligible : defaultAssets
-}
-
-function makeChoiceSetWithTarget(assets: Array<AssetItem | undefined>, target: AssetItem | undefined, round: number, size: number): AssetItem[] {
-  const uniqueAssets = uniqueAssetList(assets)
-  const safeTarget = target ?? uniqueAssets[0] ?? defaultAssets[0]
-  const distractors = uniqueAssetList([...uniqueAssets, ...defaultAssets]).filter((asset) => asset.id !== safeTarget.id)
-  const selected = [safeTarget]
-  for (let index = 0; selected.length < size && index < distractors.length; index += 1) {
-    selected.push(distractors[(round + index) % distractors.length])
-  }
-  return rotateList(selected, round)
-}
-
-function uniqueAssetList(assets: Array<AssetItem | undefined>): AssetItem[] {
-  const seen = new Set<string>()
-  const unique: AssetItem[] = []
-  for (const asset of assets) {
-    if (!asset || seen.has(asset.id)) continue
-    seen.add(asset.id)
-    unique.push(asset)
-  }
-  return unique
-}
-
-function rotateList<T>(items: T[], round: number): T[] {
-  if (items.length === 0) return items
-  const offset = round % items.length
-  return [...items.slice(offset), ...items.slice(0, offset)]
 }
 
 function assetHasTagOrCategory(asset: AssetItem, value: string): boolean {
